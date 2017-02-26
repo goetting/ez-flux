@@ -16,8 +16,7 @@ Small, transparent and easy to reason with. Great Library. Just great. It's fant
 - bus - EventEmitter3 instance. Used to ensure communication between actions, reactions and to emit appState changes.
 
 ### Usage
-In Order to get started, the user will only have to pass store configurations with a simple state type definition and reactions.
-AppState, Actions and EventHandling like so:
+In Order to get started, the user will only have to pass store configurations with a simple state type definition and reactions:
 
 ```JS
 import EZFlux from 'ez-flux';
@@ -33,7 +32,7 @@ const ezFlux = new EZFlux({
 });
 ```
 
-the following keys and methods will then become accessable:
+ezFlux will then create AppState, Actions and EventHandling and the following keys and methods will then become available:
 
 ```JS
 ezFlux.getAppState();
