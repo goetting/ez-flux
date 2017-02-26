@@ -1,0 +1,23 @@
+{
+  'extends': ['airbnb', 'plugin:flowtype/recommended'],
+  'rules': {
+    'no-duplicate-imports': 0,
+    'valid-typeof': 0,
+    'max-len': ['error', 100, 2, {
+      ignoreUrls: true,
+      ignoreComments: true,
+      ignoreRegExpLiterals: true,
+      ignoreStrings: true,
+      ignoreTemplateLiterals: true
+    }],
+  },
+  'parser': 'babel-eslint',
+  'globals': {
+    'window': true,
+    'document': true,
+    'WebSocket': true
+  },
+  'plugins': [
+    'flowtype',
+  ],
+}
