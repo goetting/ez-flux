@@ -1,13 +1,12 @@
 /* @flow */
 import Flux from './flux';
-import type { EZFluxConfig, Logger, StoreConfigs, Store } from './flux';
+import type { EZFluxConfig, Logger, StoreConfigs, StateGetters } from './flux';
 
 export default class EZFlux {
   flux: Flux;
   config: EZFluxConfig;
-  logger: Logger
-  stores: { [string]: Store };
-  getAppState: () => Object;
+  logger: Logger;
+  state: StateGetters;
   actions: { [string]: any => any };
   history: { [string]: { time: string, msg: string, data?: any } };
   on: (name: string, callback: any => any) => void;
@@ -33,14 +32,13 @@ export default class EZFlux {
       trace: (...args) => { if (this.config.debugMode) console.trace(...args); },
     };
     this.flux = new Flux(this.config, stores, this.logger);
-    this.stores = this.flux.stores;
     this.actions = this.flux.actions;
     this.history = this.flux.bus.history;
+    this.state = this.flux.stateGetters;
     this.on = (...args) => this.flux.bus.on(...args);
     this.once = (...args) => this.flux.bus.once(...args);
     this.emit = (...args) => this.flux.bus.emit(...args);
     this.removeListener = (...args) => this.flux.bus.removeListener(...args);
-    this.getAppState = () => Object.assign({}, this.flux.appState);
   }
 
   getConfig(): EZFluxConfig {

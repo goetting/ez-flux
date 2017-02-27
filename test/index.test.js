@@ -4,7 +4,7 @@ import storeData from './data/stores.js';
 const tests = {
   'EZFlux': {
     'should spawn without blowing up': storeShouldSpawn,
-    'should contain reactions, stateTypes and state getters': storeShouldBeInTact,
+    'should have state with stateType and state getters': storeShouldBeInTact,
     'Store': {
       'should generate Store if storeConfig is valid': shouldGenerateStore,
       'validateStoreData': {
@@ -25,8 +25,8 @@ function storeShouldSpawn() {
 }
 function storeShouldBeInTact() {
   const ez = new EZFlux({ stores: storeData });
-  const { stateTypes, reactions } = ez.stores.avengers;
-  const storeState = ez.stores.avengers.getState();
+  const stateTypes= ez.state.avengers.getTypes();
+  const storeState = ez.state.avengers.get();
 
   Object.keys(stateTypes).forEach((k) => {
     expect(stateTypes[k] === storeData.avengers.stateTypes[k]).toBeTruthy();
@@ -34,14 +34,11 @@ function storeShouldBeInTact() {
   Object.keys(storeState).forEach((k) => {
     expect(storeState[k] === storeData.avengers.state[k]).toBeTruthy();
   });
-  Object.keys(reactions).forEach((k) => {
-    expect(typeof storeData.avengers.reactions[k] === 'function').toBeTruthy();
-  });
 }
 function shouldGenerateStore() {
   const ez = new EZFlux({ stores: storeData });
 
-  expect(ez.stores.avengers).toBeTruthy();
+  expect(ez.state.avengers && ez.state.avengers.get()).toBeTruthy();
 }
 function storeFailsWithoutReactions() {
   const invalidStoreData = {
@@ -51,13 +48,13 @@ function storeFailsWithoutReactions() {
     }
   };
   const ez = new EZFlux({stores: invalidStoreData});
-  expect(Object.keys(ez.stores).length).toBeFalsy();
+  expect(Object.keys(ez.state.get()).length).toBeFalsy();
 }
 function storeFailsWithoutStates() {
   const invalidStoreData = { avengers: { reactions: storeData.avengers.reactions } };
   const ez = new EZFlux({ stores: invalidStoreData });
 
-  expect(Object.keys(ez.stores).length).toBeFalsy();
+  expect(Object.keys(ez.state.get()).length).toBeFalsy();
 }
 function storeFailsIfWrongReactions() {
   const invalidStoreData = {
@@ -69,7 +66,7 @@ function storeFailsIfWrongReactions() {
   };
   const ez = new EZFlux({ stores: invalidStoreData });
 
-  expect(Object.keys(ez.stores).length).toBeFalsy();
+  expect(Object.keys(ez.state.get()).length).toBeFalsy();
 }
 function storeGeneratesStateTypes() {
   const incompleteStoreData = {
@@ -77,8 +74,8 @@ function storeGeneratesStateTypes() {
   };
   const ez = new EZFlux({ stores: incompleteStoreData });
 
-  Object.keys(ez.stores.avengers.stateTypes).forEach(key => {
-    const generatedStateType = ez.stores.avengers.stateTypes[key];
+  Object.keys(ez.state.avengers.getTypes()).forEach(key => {
+    const generatedStateType = ez.state.avengers.getTypes()[key];
     const typeofState = typeof storeData.avengers.state[key];
 
     expect(generatedStateType === typeofState).toBeTruthy();
@@ -102,7 +99,7 @@ function storeFailsIfTypesUndefined() {
   };
   const ez = new EZFlux({ stores: invalidStoreData });
 
-  expect(Object.keys(ez.stores).length).toBeFalsy();
+  expect(Object.keys(ez.state.get()).length).toBeFalsy();
 }
 function storeFailsIfNoMach() {
   const invalidStoreData = {
@@ -114,7 +111,7 @@ function storeFailsIfNoMach() {
   };
   const ez = new EZFlux({ stores: invalidStoreData });
 
-  expect(Object.keys(ez.stores).length).toBeFalsy();
+  expect(Object.keys(ez.state.get()).length).toBeFalsy();
 }
 function storeGeneratesState() {
   const invalidStoreData = {
@@ -125,7 +122,7 @@ function storeGeneratesState() {
   };
   const ez = new EZFlux({ stores: invalidStoreData });
 
-  expect(ez.stores.avengers.getState().thor === '').toBeTruthy();
+  expect(ez.state.avengers.get().thor === '').toBeTruthy();
 }
 function compile(json) {
   for (let k in json) {

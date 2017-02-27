@@ -30,7 +30,7 @@ export type ValidStoreConfig = {
   reactions: Reactions,
 };
 export type StoreConfigs = { [name: string]: StoreConfig};
-export type Store = { reactions: Reactions, stateTypes: Object, getState: Object };
+export type StateGetters = { get: () => Object } & { [storeName: string]: Object };
 
 const colorMap: Object = {
   error: 'red',
@@ -91,23 +91,22 @@ export default class Flux {
   bus: EventEmitter;
   config: Object;
   logger: Logger;
-  appState: Object;
+  state: Object;
+  stateGetters: StateGetters;
   stores: Object;
   actions: { [string]: (any) => void };
   updateBuffer: any[];
   updateTimeout: any;
   isDispatching: boolean;
   dispatchBuffer: any[];
-  defaultAppState: Object;
 
   constructor(config: EZFluxConfig = {}, storeConfigs: StoreConfigs = {}, logger: Logger) {
     this.config = config;
     this.logger = logger;
 
     this.bus = new EventEmitter();
-    this.appState = {};
-    this.defaultAppState = {};
-    this.stores = {};
+    this.state = {};
+    this.stateGetters = { get: () => Object.assign({}, this.state) };
     this.actions = {};
 
     this.dispatchBuffer = [];
@@ -134,7 +133,11 @@ export default class Flux {
     const storeConfig: ValidStoreConfig = this.validateStoreData(name, storeConfigParam);
 
     if (storeConfig.isValid) {
-      this.integrateStoreData(storeConfig);
+      this.state[name] = Object.assign({}, storeConfig.state);
+      this.stateGetters[name] = {
+        get: () => Object.assign({}, this.state[name]),
+        getTypes: () => Object.assign({}, storeConfig.stateTypes),
+      };
       this.integrateReactions(storeConfig);
     }
   }
@@ -178,14 +181,6 @@ export default class Flux {
     return res;
   }
 
-  integrateStoreData({ name, state, stateTypes, reactions }: ValidStoreConfig): void {
-    const getState = (): Object => Object.assign({}, this.appState[name]);
-
-    this.appState[name] = Object.assign({}, state);
-    this.defaultAppState[name] = Object.assign({}, state);
-    this.stores[name] = { reactions, stateTypes, getState };
-  }
-
   integrateReactions({ name, state, stateTypes, reactions }: ValidStoreConfig): void {
     Object
       .keys(reactions)
@@ -208,7 +203,7 @@ export default class Flux {
             }) > -1;
 
           if (newStateIsValid) {
-            Object.assign(this.appState[name], state);
+            Object.assign(this.state[name], state);
             this.queueUpdate(name);
           }
         });
@@ -246,12 +241,12 @@ export default class Flux {
 
   dispatch(reaction: any => Object, data: any, storeName: string): Object {
     this.isDispatching = true;
-    const newState = reaction(data, this.appState[storeName]);
+    const newState = reaction(data, this.state[storeName]);
     this.isDispatching = false;
     this.flushDispatchBuffer();
     if (!typeof newState === 'object' || !Object.keys(newState).length) {
       this.logger.error(`reaction of ${storeName} store did not return an object ot change state`);
-      return this.appState[storeName];
+      return this.state[storeName];
     }
     return newState;
   }
@@ -260,7 +255,7 @@ export default class Flux {
     const key = this.updateBuffer.shift();
     if (!key) return;
 
-    this.emit(`publicChange.appState.${key}`, this.stores[key]);
+    this.emit(`state.change.${key}`, Object.assign(this.state[key]));
     this.flushUpdates();
   }
 
