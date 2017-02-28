@@ -10,8 +10,7 @@ Small, transparent and easy to reason with. Great Library. Just great. It's fant
 ### Glossary
 
 - state - Single, enumerable object, may only be manipulated by reactions.
-- reactions - Manipulate their parent namespace on the state.
-- actions - Trigger reactions.
+- actions - Manipulate their parent namespace on the state.
 - bus - EventEmitter3 instance. Hooks up actions, reactions and exposes state changes.
 
 ### Usage
@@ -22,26 +21,34 @@ import EZFlux from 'ez-flux';
 
 const ezFlux = new EZFlux({
   weather: {
-    stateTypes: { temperature: 'number', rain: 'boolean' },
-    reactions: {
-      setData: ({ temperature, rain }) => ({ temperature, rain }),
-      setRain: rain => ({ rain }),
+    state: {
+      temperature: 20,
+      rain: false,
+      isLoading: false,
+    },
+    actions: {
+      setRain: (rain, currentState, setState) => {
+        setState({ rain });
+      },
+      loadData: (qry, currentState, setState) => {
+        setState({ isLoading: true });
+
+        someAPI(qry, temperature => setState({ temperature, isLoading: false }));
+      },
     },
   },
 });
 ```
 
-ezFlux will use the event system to hook actions up with the state and make the following keys and methods will available to the user:
+ezFlux will use the event system to hook actions up with the state and make the following keys and methods available to the user:
 
 ```JS
 ezFlux.state.get();
-// { weather: { temperature: 0, rain: false } }
+// { weather: { temperature: 20, rain: false } }
 ezFlux.state.weather.get();
 // { temperature: 0, rain: false }
-ezFlux.state.weather.getTypes();
-// { temperature: 'number', rain: 'boolean' }
-ezFlux.on('change.weather', storeState => console.log(storeState));
-// will out { temperature: 0, rain: true } after:
+ezFlux.on('state.change.weather', storeState => console.log(storeState));
+// will out { temperature: 20, rain: true, isLoading: false } after:
 ezFlux.actions.weather.setRain(true);
 // triggers trigger-event, state manipulation by reactions and change-event.
 ```
