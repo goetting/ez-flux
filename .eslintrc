@@ -2,6 +2,7 @@
   'extends': ['airbnb', 'plugin:flowtype/recommended'],
   'rules': {
     'no-duplicate-imports': 0,
+    'no-plusplus': 0,
     'valid-typeof': 0,
     'max-len': ['error', 100, 2, {
       ignoreUrls: true,
