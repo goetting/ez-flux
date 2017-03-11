@@ -6,16 +6,16 @@ const tests = {
     'should spawn without blowing up': ezFluxShouldSpawn,
     'state scope addition': {
       'should add state and state getters given healthy configuration': storeShouldBeInTact,
-      'should fail without actions': () => muteConsole(storeFailsWithoutReactions),
-      'should fail without state': () => muteConsole(storeFailsWithoutStates),
-      'should fail if actions is no function dictionary': () => muteConsole(storeFailsIfWrongReactions),
+      'should fail without actions': storeFailsWithoutReactions,
+      'should fail without state': storeFailsWithoutStates,
+      'should fail if actions is no function dictionary': storeFailsIfWrongReactions,
     },
     'action trigger creation': {
       'should create an action trigger for each action passed in the constructor': actionCreate,
     },
     'actions': {
       'should be triggered by actionTriggers with the appropriate data passed': actionsCallable,
-      'should fail to change state if setState was called falsy or !object': () => muteConsole(actionsWrongStateVal),
+      'should fail to change state if setState was called falsy or !object': actionsWrongStateVal,
       'should fire trigger event and state change event on statechange': stateChangeEvents,
     },
     'config': {
@@ -41,15 +41,18 @@ function storeShouldBeInTact() {
 }
 
 function storeFailsWithoutReactions() {
-  const ez = new EZFlux({ avengers: { state: stateConfig.avengers.state } });
+  let err = null;
 
-  expect(Object.keys(ez.state).length).toBeFalsy();
+  try { const ez = new EZFlux({ avengers: { state: stateConfig.avengers.state } }); }
+  catch (e) { err = e; }
+  expect(err).toBeTruthy();
 }
 
 function storeFailsWithoutStates() {
-  const ez = new EZFlux({ avengers: { actions: stateConfig.avengers.reactions } });
-
-  expect(Object.keys(ez.state).length).toBeFalsy();
+  let err = null;
+  try { const ez = new EZFlux({ avengers: { actions: stateConfig.avengers.reactions } }); }
+  catch (e) { err = e; }
+  expect(err).toBeTruthy();
 }
 
 function storeFailsIfWrongReactions() {
@@ -59,9 +62,10 @@ function storeFailsIfWrongReactions() {
       actions: { lol: 'zomg' },
     }
   };
-  const ez = new EZFlux(invalidStoreData);
-
-  expect(Object.keys(ez.state).length).toBeFalsy();
+  let err = null;
+  try { const ez = new EZFlux(invalidStoreData); }
+  catch (e) { err = e; }
+  expect(err).toBeTruthy();
 }
 
 function actionCreate() {
@@ -86,10 +90,13 @@ function actionsCallable() {
 
 function actionsWrongStateVal() {
   const ez = new EZFlux(stateConfig);
+  let err = null;
 
   expect(ez.state.avengers.hulk).toEqual('normal');
 
-  ez.actions.avengers.setData();
+  try { ez.actions.avengers.setData(); }
+  catch (e) { err = e; }
+  expect(err).toBeTruthy();
 
   expect(ez.state.avengers.hulk).toEqual('normal');
 }

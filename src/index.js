@@ -10,7 +10,7 @@ type StateConfig = { [name: string]: { state: Object, actions: Actions} };
 
 const colorMap: Object = { error: 'red', action: 'cyan', change: 'green' };
 
-export default class Flux extends EventEmitter3 {
+export default class EZFlux extends EventEmitter3 {
   static cloneDeep(obj: any): any {
     if (!obj || typeof obj !== 'object') {
       return obj;
@@ -19,18 +19,16 @@ export default class Flux extends EventEmitter3 {
 
     if (obj instanceof Array) {
       const arrClone: any[] = [];
-      const { length } = obj;
 
-      for (; i < length; i++) {
+      for (i = obj.length; i--;) {
         arrClone[i] = this.cloneDeep(obj[i]);
       }
       return arrClone;
     }
     const objClone: Object = {};
     const keys = Object.keys(obj);
-    const { length } = keys;
 
-    for (; i < length; i++) {
+    for (i = keys.length; i--;) {
       const key = keys[i];
 
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
@@ -53,12 +51,11 @@ export default class Flux extends EventEmitter3 {
     super();
     const appState = {};
     const scopeNames = Object.keys(stateCfg);
-    const { length } = scopeNames;
 
     Object.defineProperty(this, 'state', ({ get: () => this.constructor.cloneDeep(appState) }: Object));
     if (cfg) this.setConfig(cfg);
 
-    for (let i = 0; i < length; i++) {
+    for (let i = scopeNames.length; i--;) {
       const { actions, state } = stateCfg[scopeNames[i]];
 
       this.addScopeToState(scopeNames[i], state, actions, appState);
@@ -69,26 +66,22 @@ export default class Flux extends EventEmitter3 {
 
   addScopeToState(name: string, state: Object, actions: Actions, appState: Object): void {
     if (!state || typeof state !== 'object') {
-      if (this.cfg.debug) console.error(`ezFlux: "${name}" must include a state object`);                  // eslint-disable-line no-console
-      return;
+      throw new Error(`ezFlux: "${name}" must include a state object`);
     }
     if (!actions || Object.keys(actions).find(key => typeof actions[key] !== 'function')) {
-      if (this.cfg.debug) console.error(`ezFlux: "${name}" actions must include dictionary of functions`); // eslint-disable-line no-console
-      return;
+      throw new Error(`ezFlux: "${name}" actions must include dictionary of functions`);
     }
     const actionNames = Object.keys(actions);
-    const { length } = actionNames;
 
     appState[name] = this.constructor.cloneDeep(state);                                                    // eslint-disable-line no-param-reassign
 
-    for (let i = 0; i < length; i++) {
+    for (let i = actionNames.length; i--;) {
       const actionName: string = actionNames[i];
       const eventName: string = this.createActionTrigger(name, actionName);
       const action: Action = actions[actionName];
       const setState: SetState = (stateChange: Object): void => {
         if (!stateChange || typeof stateChange !== 'object') {
-          if (this.cfg.debug) console.error(`${name}.${actionName}: setState argument must be Object`);   // eslint-disable-line no-console
-          return;
+          throw new Error(`${name}.${actionName}: setState argument must be Object`);
         }
         Object.assign(appState[name], stateChange);
         this.queueUpdate(name);
