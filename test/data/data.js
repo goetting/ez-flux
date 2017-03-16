@@ -1,17 +1,18 @@
+const timeout = async ms => new Promise(res => setTimeout(res, ms));
+
 export default {
   stateConfig: {
     avengers: {
-      state: { hulk: 'normal', ironMan: 'normal', thor: 'normal', ready: false },
+      state: { hulk: 'normal', ironMan: 'normal', thor: 'normal', ready: false, someArray: [] },
       actions: {
-        setAvengersReady(data, state, setState) {
-          setState({ hulk: 'green', ironMan: 'suited up', thor: 'hammered', ready: true });
+        setAvengersReady: async () => {
+          await timeout(1000);
+          return { hulk: 'green', ironMan: 'suited up', thor: 'hammered', ready: true }
         },
-        setHulk(data, state, setState) {
-          setState({ hulk: data, ready: state.ready && data.hulk === 'green' });
+        setHulk(data, { state }) {
+          return { hulk: data, ready: state.avengers.ready && data.hulk === 'green' };
         },
-        setData(data, state, setState) {
-          setState(data);
-        },
+        setData: data => data,
       },
     },
   },

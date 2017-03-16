@@ -1,26 +1,25 @@
 /* @flow */
 import EventEmitter3 from 'eventemitter3';
 
-type SetState = (stateChange: any) => void;
-type Action = (userData: any, state: Object, setState: SetState) => void;
+type Action = (userData: any, state: Object) => Promise<Object> | Object;
 type Actions = { [string]: Action };
-type ActionTriggers = { [string]: any => void };
+type ActionTriggers = { [string]: any => Promise<void> };
 type Config = { debug?: boolean, throttleUpdates?: boolean, maxListeners?: number };
 type StateConfig = { [name: string]: { state: Object, actions: Actions} };
+type EventBuffer = { [eventName: string]: { [id: number]: 1 } };
 
 const colorMap: Object = { error: 'red', action: 'cyan', change: 'green' };
+let nextId = 0;
 
 export default class EZFlux extends EventEmitter3 {
   static cloneDeep(obj: any): any {
     if (!obj || typeof obj !== 'object') {
       return obj;
     }
-    let i = 0;
-
     if (obj instanceof Array) {
       const arrClone: any[] = [];
 
-      for (i = obj.length; i--;) {
+      for (let i = obj.length; i--;) {
         arrClone[i] = this.cloneDeep(obj[i]);
       }
       return arrClone;
@@ -28,7 +27,7 @@ export default class EZFlux extends EventEmitter3 {
     const objClone: Object = {};
     const keys = Object.keys(obj);
 
-    for (i = keys.length; i--;) {
+    for (let i = keys.length; i--;) {
       const key = keys[i];
 
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
@@ -37,15 +36,26 @@ export default class EZFlux extends EventEmitter3 {
     }
     return objClone;
   }
+  static isPromise(val: any): boolean {
+    return val && typeof val.then === 'function';
+  }
+  static generateUID(): number {
+    return nextId++;
+  }
+  static getTriggerEventName(stateName: string, actionName: string): string {
+    return `action.trigger.${stateName}.${actionName}`;
+  }
+  static getChangeEventName(stateName: string): string {
+    return `state.change.${stateName}`;
+  }
 
   history: { [timeMsg: string]: { time: number, msg: string, state: Object } } = {};
   cfg: Config = { debug: true, throttleUpdates: false };
   runsInBrowser: boolean = typeof window !== 'undefined' && !!window.requestAnimationFrame
   actions: { [string]: ActionTriggers } = {};
-  updateBuffer: any[] = [];
-  updateTimeout: any = null;
+  eventBuffer: EventBuffer = {};
+  emissionTimeout: any = null;
   state: any;
-  get: any;
 
   constructor(stateCfg: StateConfig = {}, cfg: Config = {}) {
     super();
@@ -73,52 +83,69 @@ export default class EZFlux extends EventEmitter3 {
     }
     const actionNames = Object.keys(actions);
 
-    appState[name] = this.constructor.cloneDeep(state);                                                    // eslint-disable-line no-param-reassign
+    appState[name] = this.constructor.cloneDeep(state);                                                // eslint-disable-line no-param-reassign
 
     for (let i = actionNames.length; i--;) {
       const actionName: string = actionNames[i];
-      const eventName: string = this.createActionTrigger(name, actionName);
       const action: Action = actions[actionName];
-      const setState: SetState = (stateChange: Object): void => {
-        if (!stateChange || typeof stateChange !== 'object') {
-          throw new Error(`${name}.${actionName}: setState argument must be Object`);
-        }
-        Object.assign(appState[name], stateChange);
-        this.queueUpdate(name);
-      };
+      const triggerEventName: string = this.createActionTrigger(name, actionName);
+      const changeEventName: string = this.constructor.getChangeEventName(name);
 
-      this.on(eventName, (data): void => {
-        action(data, this.state, setState);
+      this.eventBuffer[changeEventName] = {};
+      this.on(triggerEventName, (data, id): void => {
+        const actionRes: Object | Promise<Object> = action(data, this);
+        const setState = (stateChange: Object): void => {
+          if (!stateChange || typeof stateChange !== 'object') {
+            throw new Error(`ezFlux: "${name}.${actionName}": action did not return an Object.`);
+          }
+          Object.assign(appState[name], stateChange);
+          this.emitOrBuffer(changeEventName, id);
+        };
+        if (this.constructor.isPromise(actionRes)) actionRes.then(setState);
+        else setState(actionRes);
       });
     }
   }
 
   createActionTrigger(stateName: string, actionName: string): string {
-    const eventName: string = `action.${stateName}.${actionName}`;
+    const triggerEventName: string = this.constructor.getTriggerEventName(stateName, actionName);
+    const changeEventName: string = this.constructor.getChangeEventName(stateName);
 
     if (!this.actions[stateName]) this.actions[stateName] = {};
-    this.actions[stateName][actionName] = data => this.emit(eventName, data);
 
-    return eventName;
+    this.actions[stateName][actionName] = (data: any): Promise<void> =>
+      new Promise((res) => {
+        const id = this.constructor.generateUID();
+        const eventHandler = (idDictionary) => {
+          if (!idDictionary[id]) return;
+          this.removeListener(changeEventName, eventHandler);
+          res();
+        };
+        this.on(changeEventName, eventHandler);
+        this.emit(triggerEventName, data, id);
+      });
+    return triggerEventName;
   }
 
   /**                                   Event Handling                                    */
 
-  flushUpdates(): void {
-    const key = this.updateBuffer.shift();
-    if (!key) return;
-
-    this.emit(`state.change.${key}`, this.state);
-    this.flushUpdates();
+  emitOrBuffer(eventName: string, id: number): void {
+    if (!this.runsInBrowser || !this.cfg.throttleUpdates) {
+      this.emit(eventName, { [id]: 1 });
+      return;
+    }
+    this.eventBuffer[eventName][id] = 1;
+    window.cancelAnimationFrame(this.emissionTimeout);
+    this.emissionTimeout = window.requestAnimationFrame(this.emitBuffered);
   }
 
-  queueUpdate(key: string): void {
-    if (this.updateBuffer.indexOf(key) === -1) this.updateBuffer.push(key);
-    if (this.runsInBrowser && this.cfg.throttleUpdates) {
-      window.cancelAnimationFrame(this.updateTimeout);
-      this.updateTimeout = window.requestAnimationFrame(this.flushUpdates);
-    } else {
-      this.flushUpdates();
+  emitBuffered(): void {
+    const names = Object.keys(this.eventBuffer);
+
+    for (let i = names.length; i--;) {
+      const ids = this.eventBuffer[names[i]];
+
+      this.emit(names[i], ids);
     }
   }
 
@@ -134,6 +161,7 @@ export default class EZFlux extends EventEmitter3 {
     this.history[`${time} ${msg}`] = { time, msg, state };
 
     if (this.runsInBrowser) console.log(`%c${msg}`, `color:${color}`, { state });                       // eslint-disable-line no-console
+    else console.log(msg, { state });                                                                   // eslint-disable-line no-console
   }
 
   /**                                   Config                                    */
