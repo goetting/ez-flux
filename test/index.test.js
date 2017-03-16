@@ -36,13 +36,13 @@ function ezFluxShouldSpawn() {
 }
 
 function stateShouldBeInTact() {
-  expect(new EZFlux(stateConfig, dedebug).state.avengers).toEqual(stateConfig.avengers.state);
+  expect(new EZFlux(stateConfig, dedebug).state.avengers).toEqual(stateConfig.avengers.values);
 }
 
 function storeFailsWithoutReactions() {
   let err = null;
 
-  try { const ez = new EZFlux({ avengers: { state: stateConfig.avengers.state } }, dedebug); }
+  try { const ez = new EZFlux({ avengers: { values: stateConfig.avengers.values } }, dedebug); }
   catch (e) { err = e; }
   expect(err).toBeTruthy();
 }
@@ -57,7 +57,7 @@ function storeFailsWithoutStates() {
 function storeFailsIfWrongReactions() {
   const invalidStoreData = {
     avengers: {
-      state: stateConfig.avengers.state,
+      values: stateConfig.avengers.values,
       actions: { lol: 'zomg' },
     }
   };
@@ -99,8 +99,8 @@ function stateChangeEvents(done) {
   let oneDone = false;
   const cb = () => { oneDone ? done() : oneDone = true; };
 
-  ez.once('state.change.avengers', cb);
-  ez.once('action.trigger.avengers.setData', cb);
+  ez.once('change:state.avengers', cb);
+  ez.once('trigger:action.avengers.setData', cb);
   ez.actions.avengers.setData({ hulk: 'green' });
 }
 

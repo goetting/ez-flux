@@ -5,7 +5,7 @@ type Action = (userData: any, state: Object) => Promise<Object> | Object;
 type Actions = { [string]: Action };
 type ActionTriggers = { [string]: any => Promise<void> };
 type Config = { debug?: boolean, throttleUpdates?: boolean, maxListeners?: number };
-type StateConfig = { [name: string]: { state: Object, actions: Actions} };
+type StateConfig = { [name: string]: { values: Object, actions: Actions} };
 type EventBuffer = { [eventName: string]: { [id: number]: 1 } };
 
 const colorMap: Object = { error: 'red', action: 'cyan', change: 'green' };
@@ -43,10 +43,10 @@ export default class EZFlux extends EventEmitter3 {
     return nextId++;
   }
   static getTriggerEventName(stateName: string, actionName: string): string {
-    return `action.trigger.${stateName}.${actionName}`;
+    return `trigger:action.${stateName}.${actionName}`;
   }
   static getChangeEventName(stateName: string): string {
-    return `state.change.${stateName}`;
+    return `change:state.${stateName}`;
   }
 
   history: { [timeMsg: string]: { time: number, msg: string, state: Object } } = {};
@@ -59,31 +59,31 @@ export default class EZFlux extends EventEmitter3 {
 
   constructor(stateCfg: StateConfig = {}, cfg: Config = {}) {
     super();
-    const appState = {};
+    const state = {};
     const scopeNames = Object.keys(stateCfg);
 
-    Object.defineProperty(this, 'state', ({ get: () => this.constructor.cloneDeep(appState) }: Object));
+    Object.defineProperty(this, 'state', ({ get: () => this.constructor.cloneDeep(state) }: Object));
     if (cfg) this.setConfig(cfg);
 
     for (let i = scopeNames.length; i--;) {
-      const { actions, state } = stateCfg[scopeNames[i]];
+      const { actions, values } = stateCfg[scopeNames[i]];
 
-      this.addScopeToState(scopeNames[i], state, actions, appState);
+      this.addScopeToState(scopeNames[i], values, actions, state);
     }
   }
 
   /**                                   State Configuration                                    */
 
-  addScopeToState(name: string, state: Object, actions: Actions, appState: Object): void {
-    if (!state || typeof state !== 'object') {
-      throw new Error(`ezFlux: "${name}" must include a state object`);
+  addScopeToState(name: string, values: Object, actions: Actions, state: Object): void {
+    if (!values || typeof values !== 'object') {
+      throw new Error(`ezFlux: "${name}" must include a values object`);
     }
     if (!actions || Object.keys(actions).find(key => typeof actions[key] !== 'function')) {
       throw new Error(`ezFlux: "${name}" actions must include dictionary of functions`);
     }
     const actionNames = Object.keys(actions);
 
-    appState[name] = this.constructor.cloneDeep(state);                                                // eslint-disable-line no-param-reassign
+    state[name] = this.constructor.cloneDeep(values);                                                // eslint-disable-line no-param-reassign
 
     for (let i = actionNames.length; i--;) {
       const actionName: string = actionNames[i];
@@ -98,7 +98,7 @@ export default class EZFlux extends EventEmitter3 {
           if (!stateChange || typeof stateChange !== 'object') {
             throw new Error(`ezFlux: "${name}.${actionName}": action did not return an Object.`);
           }
-          Object.assign(appState[name], stateChange);
+          Object.assign(state[name], stateChange);
           this.emitOrBuffer(changeEventName, id);
         };
         if (this.constructor.isPromise(actionRes)) actionRes.then(setState);

@@ -1,57 +1,81 @@
 # ezFlux (WIP)
 
-ezFlux is a tiny, simple and easy to use state machine with flux-like event flow.
-A single, enumberable state serves as data core.
-It uses one, exposed event emitter instance and, if enabled, generates a comprehensive timeline documenting all state changes.
-Its only dependency is EventEmitter3.
+ezFlux is a tiny, simple JavaScript state machine with flux-like event flow.
+It extends its only dependency: EventEmitter3.
+Its single state can only be manipulated by actions.
+If enabled, it generates a comprehensive timeline documenting all state changes.
 
-Small, transparent and easy to reason with. Great Library. Just great. It's fantastic.
-
-### Glossary
-
-- state - Single, enumerable object, may only be manipulated by reactions.
-- actions - Manipulate their parent namespace on the state.
-- bus - EventEmitter3 instance. Hooks up actions, reactions and exposes state changes.
+No dispatchers, no reducers, no stores.
+Only user actions, transparent events and one enumberable state.
 
 ### Usage
-In Order to get started, the user will only have to pass namespace configurations with a simple state type definition and reactions:
+EZFlux expects a dictionary of state-namespaces with values and actions.
+The return value of actions will be Object.assigned to the values of the state-namespace.
 
 ```JS
 import EZFlux from 'ez-flux';
 
 const ezFlux = new EZFlux({
   weather: {
-    state: {
-      temperature: 20,
-      rain: false,
-      isLoading: false,
+    values: {
+      rain: false
     },
     actions: {
-      setRain: (rain, currentState, setState) => {
-        setState({ rain });
-      },
-      loadData: (qry, currentState, setState) => {
-        setState({ isLoading: true });
+      setRain: rain => ({ rain })
+    },
+  },
+});
+```
 
-        someAPI(qry, temperature => setState({ temperature, isLoading: false }));
+
+ezFlux will assemble the state and generate action triggers for the appropriate actions.
+
+```JS
+ezFlux.state;
+// Implicit getter returns deepClone of state: { weather: { rain: false } }
+
+ezFlux.on('change:state.weather', () => console.log(ezFlux.state.weather) );
+// Full event emitter API - subscribe to changes on the 'weather' namespace of the state
+
+ezFlux.actions.weather.setRain(true);
+// Triggers our action. Our listener will now log: { rain: true };
+```
+
+ezFlux also supports asynchronous behaviour. An action may be an async function, potentially acceping a promise as a return value.
+
+```JS
+import EZFlux from 'ez-flux';
+
+const ezFlux = new EZFlux({
+  weather: {
+    values: {
+      rain: false,
+      temperature: '0 °C',
+    },
+    actions: {
+      setRain: rain => ({ rain }),
+      loadData: async (query) => {
+        const { temperature, rain } = await apiCall(query);
+
+        return { temperature, rain };
       },
     },
   },
 });
 ```
 
-ezFlux will use the event system to hook actions up with the state and make the following keys and methods available to the user:
+All actions return promises. In simple situations, this can be helpful if you wish to avoid helper values like "isLoading" on your state.
 
 ```JS
-ezFlux.state.get();
-// { weather: { temperature: 20, rain: false } }
-ezFlux.state.weather.get();
-// { temperature: 0, rain: false }
-ezFlux.on('state.change.weather', storeState => console.log(storeState));
-// will out { temperature: 20, rain: true, isLoading: false } after:
-ezFlux.actions.weather.setRain(true);
-// triggers trigger-event, state manipulation by reactions and change-event.
+aync function renderCityWeather(city) {
+  await ezFlux.actions.weather.loadData({ city });
+  const { weather } = ezFlux.state;
+
+  renderData(weather);
+}
 ```
+You may freely use this behavour to orchestrate more complex workflows.
+The ezFlux will still emit the propper events for actions triggered and states changed to anyone subscribed.
 
 ### Development
 

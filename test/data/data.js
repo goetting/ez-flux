@@ -3,7 +3,7 @@ const timeout = async ms => new Promise(res => setTimeout(res, ms));
 export default {
   stateConfig: {
     avengers: {
-      state: { hulk: 'normal', ironMan: 'normal', thor: 'normal', ready: false, someArray: [] },
+      values: { hulk: 'normal', ironMan: 'normal', thor: 'normal', ready: false, someArray: [] },
       actions: {
         setAvengersReady: async () => {
           await timeout(1000);
