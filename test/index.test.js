@@ -29,27 +29,26 @@ const tests = {
 };
 
 const { stateConfig } = testData;
-const dedebug = { debug: false };
 
 function ezFluxShouldSpawn() {
   expect(new EZFlux()).toBeTruthy();
 }
 
 function stateShouldBeInTact() {
-  expect(new EZFlux(stateConfig, dedebug).state.avengers).toEqual(stateConfig.avengers.values);
+  expect(new EZFlux(stateConfig).state.avengers).toEqual(stateConfig.avengers.values);
 }
 
 function storeFailsWithoutReactions() {
   let err = null;
 
-  try { const ez = new EZFlux({ avengers: { values: stateConfig.avengers.values } }, dedebug); }
+  try { const ez = new EZFlux({ avengers: { values: stateConfig.avengers.values } }); }
   catch (e) { err = e; }
   expect(err).toBeTruthy();
 }
 
 function storeFailsWithoutStates() {
   let err = null;
-  try { const ez = new EZFlux({ avengers: { actions: stateConfig.avengers.reactions } }, dedebug); }
+  try { const ez = new EZFlux({ avengers: { actions: stateConfig.avengers.reactions } }); }
   catch (e) { err = e; }
   expect(err).toBeTruthy();
 }
@@ -62,13 +61,13 @@ function storeFailsIfWrongReactions() {
     }
   };
   let err = null;
-  try { const ez = new EZFlux(invalidStoreData, dedebug); }
+  try { const ez = new EZFlux(invalidStoreData); }
   catch (e) { err = e; }
   expect(err).toBeTruthy();
 }
 
 function actionCreate() {
-  const ez = new EZFlux(stateConfig, dedebug);
+  const ez = new EZFlux(stateConfig);
 
   expect(ez.actions.avengers).toBeTruthy();
 
@@ -78,7 +77,7 @@ function actionCreate() {
 }
 
 async function actionsCallable() {
-  const ez = new EZFlux(stateConfig, dedebug);
+  const ez = new EZFlux(stateConfig);
   expect(ez.state.avengers.hulk).toEqual('normal');
   try { await ez.actions.avengers.setHulk('green'); }
   catch(e) { throw e; }
@@ -86,7 +85,7 @@ async function actionsCallable() {
 }
 
 async function actionsWrongStateVal() {
-  const ez = new EZFlux(stateConfig, dedebug)
+  const ez = new EZFlux(stateConfig)
   let err = null;
 
   try { await ez.actions.avengers.setData(); }
@@ -95,7 +94,7 @@ async function actionsWrongStateVal() {
 }
 
 function stateChangeEvents(done) {
-  const ez = new EZFlux(stateConfig, dedebug);
+  const ez = new EZFlux(stateConfig);
   let oneDone = false;
   const cb = () => { oneDone ? done() : oneDone = true; };
 
@@ -105,12 +104,12 @@ function stateChangeEvents(done) {
 }
 
 function actionReturnsPromise() {
-  const ez = new EZFlux(stateConfig, dedebug);
+  const ez = new EZFlux(stateConfig);
   expect(typeof ez.actions.avengers.setData({ hulk: 'green' }).then).toEqual('function');
 }
 
 function asyncActions() {
-  const ez = new EZFlux(stateConfig, dedebug);
+  const ez = new EZFlux(stateConfig);
   let ms = 0;
   const interval = setInterval(() => { ms++ }, 1);
   expect(ez.state.avengers.ready).toEqual(false);
@@ -127,19 +126,19 @@ function asyncActions() {
 }
 
 function configConstruction() {
-  const ez = new EZFlux(stateConfig, dedebug);
+  const ez = new EZFlux(stateConfig);
 
   expect(ez.cfg.debug).toEqual(false);
 }
 
 function configSetter() {
-  const ez = new EZFlux(stateConfig, dedebug);
+  const ez = new EZFlux(stateConfig);
   expect(ez.cfg.throttleUpdates).toEqual(false);
   ez.setConfig({ throttleUpdates: true });
   expect(ez.cfg.throttleUpdates).toEqual(true);
 }
 function configGetter() {
-  const ez = new EZFlux(stateConfig, dedebug);
+  const ez = new EZFlux(stateConfig);
   expect(ez.getConfig()).toEqual(ez.cfg);
 }
 

@@ -4,34 +4,34 @@ import EventEmitter3 from 'eventemitter3';
 type Action = (userData: any, state: Object) => Promise<Object> | Object;
 type Actions = { [string]: Action };
 type ActionTriggers = { [string]: any => Promise<void> };
-type Config = { debug?: boolean, throttleUpdates?: boolean, maxListeners?: number };
+type Config = { debug?: boolean, throttleUpdates?: boolean };
 type StateConfig = { [name: string]: { values: Object, actions: Actions} };
 type EventBuffer = { [eventName: string]: { [id: number]: 1 } };
 
-const colorMap: Object = { error: 'red', action: 'cyan', change: 'green' };
+const colorMap: Object = { error: 'red', trigger: 'cyan', change: 'green' };
 let nextId = 0;
 
 export default class EZFlux extends EventEmitter3 {
-  static cloneDeep(obj: any): any {
-    if (!obj || typeof obj !== 'object') {
-      return obj;
+  static cloneDeep(val: any): any {
+    if (!val || typeof val !== 'object') {
+      return val;
     }
-    if (obj instanceof Array) {
+    if (val instanceof Array) {
       const arrClone: any[] = [];
 
-      for (let i = obj.length; i--;) {
-        arrClone[i] = this.cloneDeep(obj[i]);
+      for (let i = val.length; i--;) {
+        arrClone[i] = this.cloneDeep(val[i]);
       }
       return arrClone;
     }
     const objClone: Object = {};
-    const keys = Object.keys(obj);
+    const keys = Object.keys(val);
 
     for (let i = keys.length; i--;) {
       const key = keys[i];
 
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        objClone[key] = this.cloneDeep(obj[key]);
+      if (Object.prototype.hasOwnProperty.call(val, key)) {
+        objClone[key] = this.cloneDeep(val[key]);
       }
     }
     return objClone;
@@ -49,8 +49,8 @@ export default class EZFlux extends EventEmitter3 {
     return `change:state.${stateName}`;
   }
 
-  history: { [timeMsg: string]: { time: number, msg: string, state: Object } } = {};
-  cfg: Config = { debug: true, throttleUpdates: false };
+  history: { [time: number]: { time: number, eventName: string, state: Object } } = {};
+  cfg: Config = { debug: false, throttleUpdates: false };
   runsInBrowser: boolean = typeof window !== 'undefined' && !!window.requestAnimationFrame
   actions: { [string]: ActionTriggers } = {};
   eventBuffer: EventBuffer = {};
@@ -72,7 +72,7 @@ export default class EZFlux extends EventEmitter3 {
     }
   }
 
-  /**                                   State Configuration                                    */
+  /*                                   State Configuration                                    */
 
   addScopeToState(name: string, values: Object, actions: Actions, state: Object): void {
     if (!values || typeof values !== 'object') {
@@ -127,7 +127,7 @@ export default class EZFlux extends EventEmitter3 {
     return triggerEventName;
   }
 
-  /**                                   Event Handling                                    */
+  /*                                   Event Handling                                    */
 
   emitOrBuffer(eventName: string, id: number): void {
     if (!this.runsInBrowser || !this.cfg.throttleUpdates) {
@@ -149,22 +149,22 @@ export default class EZFlux extends EventEmitter3 {
     }
   }
 
-  emit(name: string = '', ...args: any[]): void {
-    super.emit(name, ...args);
+  emit(eventName: string = '', ...args: any[]): void {
+    super.emit(eventName, ...args);
     if (!this.cfg.debug) return;
 
     const state = this.state;
     const time: number = new Date().getTime();
-    const msg: string = `ezFlux | ${time} ${name}`;
-    const color: string = colorMap[name.split('.')[0]] || 'gray';
+    const msg: string = `ezFlux | ${time} ${eventName}`;
+    const color: string = colorMap[eventName.split(':')[0]] || 'gray';
 
-    this.history[`${time} ${msg}`] = { time, msg, state };
+    this.history[time] = { time, eventName, state };
 
     if (this.runsInBrowser) console.log(`%c${msg}`, `color:${color}`, { state });                       // eslint-disable-line no-console
     else console.log(msg, { state });                                                                   // eslint-disable-line no-console
   }
 
-  /**                                   Config                                    */
+  /*                                   Config                                    */
 
   getConfig(): Config {
     return Object.assign({}, this.cfg);
