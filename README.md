@@ -125,9 +125,7 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
         values: Object,
         // The return value will be applied to the stateNameSpace
         actions: {
-          [actionName: any]: {
-            (userData: any, ezFlux: typeof EZFlux) => Object | Promise<Object>
-          },
+          [actionName: any]: (userData: any, ezFlux: typeof EZFlux) => Object | Promise<Object>,
         },
       },
     }
