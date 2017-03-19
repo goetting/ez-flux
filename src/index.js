@@ -154,7 +154,7 @@ export default class EZFlux extends EventEmitter3 {
     if (!this.cfg.debug) return;
 
     const state = this.state;
-    const time: number = new Date().getTime();
+    const time: number = Date.now();
     const msg: string = `ezFlux | ${time} ${eventName}`;
     const color: string = colorMap[eventName.split(':')[0]] || 'gray';
 

@@ -8,7 +8,7 @@ If enabled, it generates a comprehensive timeline documenting all state changes.
 No dispatchers, no reducers, no stores.
 Only user actions, transparent events and one enumberable state.
 
--   [Install](#usage)
+-   [Install](#install)
 -   [Usage](#usage)
 -   [More EZ Libraries](#more-ez-libraries)
 -   [API Documentation](#api-documentation)
