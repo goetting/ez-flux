@@ -48,39 +48,46 @@ export default class EZFlux extends EventEmitter3 {
   static getChangeEventName(stateName: string): string {
     return `change:state.${stateName}`;
   }
-
-  history: { [time: number]: { time: number, eventName: string, state: Object } } = {};
-  cfg: Config = { debug: false, throttleUpdates: false };
-  runsInBrowser: boolean = typeof window !== 'undefined' && !!window.requestAnimationFrame
-  actions: { [string]: ActionTriggers } = {};
-  eventBuffer: EventBuffer = {};
-  emissionTimeout: any = null;
-  state: any;
-
-  constructor(stateCfg: StateConfig = {}, cfg: Config = {}) {
-    super();
-    const state = {};
-    const scopeNames = Object.keys(stateCfg);
-
-    Object.defineProperty(this, 'state', ({ get: () => this.constructor.cloneDeep(state) }: Object));
-    if (cfg) this.setConfig(cfg);
-
-    for (let i = scopeNames.length; i--;) {
-      const { actions, values } = stateCfg[scopeNames[i]];
-
-      this.addScopeToState(scopeNames[i], values, actions, state);
-    }
-  }
-
-  /*                                   State Configuration                                    */
-
-  addScopeToState(name: string, values: Object, actions: Actions, state: Object): void {
+  static validateStateScope(values: any, actions: any, name: string) {
     if (!values || typeof values !== 'object') {
       throw new Error(`ezFlux: "${name}" must include a values object`);
     }
     if (!actions || Object.keys(actions).find(key => typeof actions[key] !== 'function')) {
       throw new Error(`ezFlux: "${name}" actions must include dictionary of functions`);
     }
+  }
+
+  history: { [time: number]: { time: number, eventName: string, state: Object } } = {};
+  cfg: Config = { debug: false, throttleUpdates: false };
+  runsInBrowser: boolean = typeof window !== 'undefined' && !!window.requestAnimationFrame;
+  actions: { [string]: ActionTriggers } = {};
+  eventBuffer: EventBuffer = {};
+  emissionTimeout: any = null;
+  state: any;
+
+  constructor(stateCfg: StateConfig = {}, options: Config & { initialState?: Object } = {}) {
+    super();
+    const state = {};
+    const scopeNames = Object.keys(stateCfg);
+    const initState = options.initialState || {};
+
+    Object.defineProperty(this, 'state', ({ get: () => this.constructor.cloneDeep(state) }: Object));
+    this.setConfig(options);
+
+    for (let i = scopeNames.length; i--;) {
+      const scopeName = scopeNames[i];
+      const actions = stateCfg[scopeName].actions;
+      let values = stateCfg[scopeName].values;
+
+      this.constructor.validateStateScope(values, actions, scopeNames[i]);
+      if (initState[scopeName]) values = Object.assign({}, values, initState[scopeName]);
+      this.addScopeToState(scopeName, values, actions, state);
+    }
+  }
+
+  /*                                   State Configuration                                    */
+
+  addScopeToState(name: string, values: Object, actions: Actions, state: Object): void {
     const actionNames = Object.keys(actions);
 
     state[name] = this.constructor.cloneDeep(values);                                                // eslint-disable-line no-param-reassign

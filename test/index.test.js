@@ -1,32 +1,35 @@
 import EZFlux from '../src/index.js';
 import testData from './data/data.js';
 
-const tests = {
-  'EZFlux': {
-    'should spawn without blowing up': ezFluxShouldSpawn,
-    'state scope addition': {
-      'should add state and state getters given healthy configuration': stateShouldBeInTact,
-      'should fail without actions': storeFailsWithoutReactions,
-      'should fail without state': storeFailsWithoutStates,
-      'should fail if actions is no function dictionary': storeFailsIfWrongReactions,
-    },
-    'action trigger creation': {
-      'should create an action trigger for each action passed in the constructor': actionCreate,
-    },
-    'actions': {
-      'should be triggered by actionTriggers with the appropriate data passed': actionsCallable,
-      'should fail to change state if setState was called falsy or !object': actionsWrongStateVal,
-      'should fire trigger event and state change event on statechange': stateChangeEvents,
-      'should return a promise': actionReturnsPromise,
-      'should set states asynchronously propperly': asyncActions,
-    },
-    'config': {
-      'should set config values while constructing': configConstruction,
-      'should set config values through setter': configSetter,
-      'should get config values': configGetter,
-    }
-  },
-};
+describe('EZFlux', () => {
+  it('should spawn without blowing up', ezFluxShouldSpawn);
+
+  describe('state scope addition', () => {
+    it('should add state and state getters given healthy configuration', stateShouldBeInTact);
+    it('should fail without actions', storeFailsWithoutReactions);
+    it('should fail without state', storeFailsWithoutStates);
+    it('should fail if actions is no function dictionary', storeFailsIfWrongReactions);
+    it('should assign init state to current state scope values', assignInitState);
+  });
+
+  describe('action trigger creation', () => {
+    it('should create an action trigger for each action passed in the constructor', actionCreate);
+  });
+
+  describe('actions', () => {
+    it('should be triggered by actionTriggers with the appropriate data passed', actionsCallable);
+    it('should fail to change state if setState was called falsy or !object', actionsWrongStateVal);
+    it('should fire trigger event and state change event on statechange', stateChangeEvents);
+    it('should return a promise', actionReturnsPromise);
+    it('should set states asynchronously propperly', asyncActions);
+  });
+
+  describe('config', () => {
+    it('should set config values while constructing', configConstruction);
+    it('should set config values through setter', configSetter);
+    it('should get config values', configGetter);
+  });
+});
 
 const { stateConfig } = testData;
 
@@ -64,6 +67,14 @@ function storeFailsIfWrongReactions() {
   try { const ez = new EZFlux(invalidStoreData); }
   catch (e) { err = e; }
   expect(err).toBeTruthy();
+}
+
+function assignInitState() {
+  const initialState = { avengers: { hulk: 'red', blackWiddow: 'cat suited' } };
+  const expectedAvengers = Object.assign({}, stateConfig.avengers.values, initialState.avengers);
+  const ez = new EZFlux(stateConfig, { initialState});
+
+  expect(ez.state.avengers).toEqual(expectedAvengers);
 }
 
 function actionCreate() {
@@ -137,15 +148,8 @@ function configSetter() {
   ez.setConfig({ throttleUpdates: true });
   expect(ez.cfg.throttleUpdates).toEqual(true);
 }
+
 function configGetter() {
   const ez = new EZFlux(stateConfig);
   expect(ez.getConfig()).toEqual(ez.cfg);
 }
-
-function compile(json) {
-  for (let k in json) {
-    if (typeof json[k] === 'function') it(k, json[k])
-    else describe(k, ()=> compile(json[k]))
-  };
-}
-compile(tests);

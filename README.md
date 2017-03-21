@@ -128,21 +128,24 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
           [actionName: any]: (userData: any, ezFlux: typeof EZFlux) => Object | Promise<Object>,
         },
       },
-    }
+    };
   ```
 
-- `Config` **Config?**
+- `Options` **Options?**
   ```TS
-    type Config = {
+    type Options = {
       // Outs event data to console and saves it in history.
       // default: false
       debug?: boolean,
-      // In browsers buffers, event emissions to animation frame
+      // In browsers buffers, event emissions to animation frame.
       // default: false
       throttleUpdates?: boolean,
-     }
+      // initialState will overwrite values in StateConfig.
+      // it must resemble the final ezFlux.state - however, any key is optional.
+      // useful to pass states from other instances, e.g. in SSR or testing scenarios.
+      initialState?: Object
+    };
   ```
-
 
 ### _static_ deepClone
 
@@ -184,7 +187,7 @@ When config.debug is true, history will save state and event data on emission.
       eventName: string,
       state: Object,
     },
-  }
+  };
 ```
 
 ### actions
@@ -197,7 +200,7 @@ Please note that an action may be called with only one arguement.
     [stateScopeName: any]: {
       [actionName: any]: (userData: any) => Promise<void>,
     },
-  }
+  };
 ```
 
 ### state
