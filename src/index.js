@@ -100,8 +100,6 @@ export default class EZFlux extends EventEmitter3 {
       const changeEventName: string = this.constructor.getChangeEventName(name);
       const canceledEventName: string = this.constructor.getCanceledEventName(name, actionName);
 
-      this.eventBuffer[changeEventName] = {};
-
       this.on(triggerEventName, (data, id): void => {
         const actionRes: Object | Promise<Object> = action(data, this);
         const setState = (stateChange: Object): void => {
@@ -152,8 +150,11 @@ export default class EZFlux extends EventEmitter3 {
       this.emit(eventName, { [id]: 1 });
       return;
     }
+    if (!this.eventBuffer[eventName]) this.eventBuffer[eventName] = {};
+
     this.eventBuffer[eventName][id] = 1;
     window.cancelAnimationFrame(this.emissionTimeout);
+
     this.emissionTimeout = window.requestAnimationFrame(() => {
       const names = Object.keys(this.eventBuffer);
 
@@ -161,6 +162,7 @@ export default class EZFlux extends EventEmitter3 {
         const ids = this.eventBuffer[names[i]];
 
         this.emit(names[i], ids);
+        delete this.eventBuffer[names[i]];
       }
     });
   }
