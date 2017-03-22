@@ -154,17 +154,15 @@ export default class EZFlux extends EventEmitter3 {
     }
     this.eventBuffer[eventName][id] = 1;
     window.cancelAnimationFrame(this.emissionTimeout);
-    this.emissionTimeout = window.requestAnimationFrame(this.emitBuffered);
-  }
+    this.emissionTimeout = window.requestAnimationFrame(() => {
+      const names = Object.keys(this.eventBuffer);
 
-  emitBuffered(): void {
-    const names = Object.keys(this.eventBuffer);
+      for (let i = names.length; i--;) {
+        const ids = this.eventBuffer[names[i]];
 
-    for (let i = names.length; i--;) {
-      const ids = this.eventBuffer[names[i]];
-
-      this.emit(names[i], ids);
-    }
+        this.emit(names[i], ids);
+      }
+    });
   }
 
   emit(eventName: string = '', ...args: any[]): void {
