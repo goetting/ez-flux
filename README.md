@@ -5,6 +5,12 @@ It extends its only dependency: EventEmitter3.
 Its single state can only be manipulated by actions.
 If enabled, it generates a comprehensive timeline documenting all state changes.
 
+#### Mission Statement
+
+-   **Full transparency**: Anything accessing ezFlux is able to deduct how the state is changing and why.
+-   **Performance**: With tiny file size and a high performance, this library will simply get out of your way.
+-   **Simplicity**: Focused on a select few, vital features and minimal API, ezFlux reduces boiler plate _significantly_.
+
 No dispatchers, no reducers, no stores.
 Only user actions, transparent events and one enumberable state.
 
@@ -18,6 +24,7 @@ Only user actions, transparent events and one enumberable state.
     -   [static isPromise](#static-ispromise)
     -   [static getTriggerEventName](#static-gettriggereventname)
     -   [static getChangeEventName](#static-getchangeeventname)
+    -   [static getCanceledEventName](#static-getcanceledeventname)
     -   [history](#history)
     -   [actions](#actions)
     -   [state](#state)
@@ -36,7 +43,7 @@ $ npm install ez-flux --save
 
 # Usage
 EZFlux expects a dictionary of state-namespaces with values and actions.
-The return value of actions will be Object.assigned to the values of the state-namespace.
+The returned Object of an action will be Object.assigned to the values of the state-namespace.
 
 ```JS
 import EZFlux from 'ez-flux';
@@ -123,9 +130,10 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
       [stateNameSpace: any]: {
         // Value members must not be functions/classes or circular.
         values: Object,
-        // The return value will be applied to the stateNameSpace
+        // Returned Object | Promsise<Object> will be applied to the stateNameSpace
+        // Returned void will result in the action being canceled
         actions: {
-          [actionName: any]: (userData: any, ezFlux: typeof EZFlux) => Object | Promise<Object>,
+          [actionName: any]: (userData: any, ezFlux: typeof EZFlux) => void | Object | Promise<Object>,
         },
       },
     };
@@ -173,6 +181,13 @@ Returns **string**
 ### _static_ getChangeEventName
 **parameters**
 -   `stateName` **string**
+
+Returns **string**
+
+### _static_ static getCanceledEventName
+**Parameters**
+-   `stateName` **string**
+-   `actionName` **string**
 
 Returns **string**
 
@@ -224,8 +239,7 @@ Returns **Config**
 
 # Contributing
 
-Contributions of any kind are always welcome.  
-With further simplification and performance optimization being top priority, features additions should be the absolute exception.
+Contributions of any kind are always welcome!
 
 To run Linter, Flow, Bable and Jest and have them watch src and test folders respectively:
 ```sh

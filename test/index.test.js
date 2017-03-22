@@ -18,7 +18,8 @@ describe('EZFlux', () => {
 
   describe('actions', () => {
     it('should be triggered by actionTriggers with the appropriate data passed', actionsCallable);
-    it('should fail to change state if setState was called falsy or !object', actionsWrongStateVal);
+    it('should fail to change state if setState was called truthy and !object', actionsWrongStateVal);
+    it('should cancel action if setState was falsy', actionsCancel);
     it('should fire trigger event and state change event on statechange', stateChangeEvents);
     it('should return a promise', actionReturnsPromise);
     it('should set states asynchronously propperly', asyncActions);
@@ -99,9 +100,21 @@ async function actionsWrongStateVal() {
   const ez = new EZFlux(stateConfig)
   let err = null;
 
-  try { await ez.actions.avengers.setData(); }
+  try { await ez.actions.avengers.setData('this should blow up'); }
   catch(e) { err = e; }
   expect(err).toBeTruthy();
+}
+
+async function actionsCancel() {
+  const ez = new EZFlux(stateConfig);
+  const { avengers } = ez.state;
+  const canceledEventName = EZFlux.getCanceledEventName('avengers', 'setData');
+  let eventFired = false;
+
+  ez.once(canceledEventName, () => { eventFired = true });
+  await ez.actions.avengers.setData();
+  expect(ez.state.avengers).toEqual(avengers);
+  expect(eventFired).toBeTruthy();
 }
 
 function stateChangeEvents(done) {

@@ -45,10 +45,13 @@ export default class EZFlux extends EventEmitter3 {
   static getTriggerEventName(stateName: string, actionName: string): string {
     return `trigger:action.${stateName}.${actionName}`;
   }
+  static getCanceledEventName(stateName: string, actionName: string): string {
+    return `canceled:action.${stateName}.${actionName}`;
+  }
   static getChangeEventName(stateName: string): string {
     return `change:state.${stateName}`;
   }
-  static validateStateScope(values: any, actions: any, name: string) {
+  static validateScope(name: string, values: any, actions: any) {
     if (!values || typeof values !== 'object') {
       throw new Error(`ezFlux: "${name}" must include a values object`);
     }
@@ -75,39 +78,44 @@ export default class EZFlux extends EventEmitter3 {
     this.setConfig(options);
 
     for (let i = scopeNames.length; i--;) {
-      const scopeName = scopeNames[i];
-      const actions = stateCfg[scopeName].actions;
-      let values = stateCfg[scopeName].values;
+      const name = scopeNames[i];
+      const { actions, values } = stateCfg[name];
 
-      this.constructor.validateStateScope(values, actions, scopeNames[i]);
-      if (initState[scopeName]) values = Object.assign({}, values, initState[scopeName]);
-      this.addScopeToState(scopeName, values, actions, state);
+      this.constructor.validateScope(name, values, actions);
+      state[name] = this.constructor.cloneDeep(values);
+      if (initState[name]) Object.assign(state[name], initState[name]);
+      this.addScopeToEventSystem(name, actions, state);
     }
   }
 
-  /*                                   State Configuration                                    */
+  /*                                   Event Setup                                    */
 
-  addScopeToState(name: string, values: Object, actions: Actions, state: Object): void {
+  addScopeToEventSystem(name: string, actions: Actions, state: Object): void {
     const actionNames = Object.keys(actions);
-
-    state[name] = this.constructor.cloneDeep(values);                                                // eslint-disable-line no-param-reassign
 
     for (let i = actionNames.length; i--;) {
       const actionName: string = actionNames[i];
       const action: Action = actions[actionName];
       const triggerEventName: string = this.createActionTrigger(name, actionName);
       const changeEventName: string = this.constructor.getChangeEventName(name);
+      const canceledEventName: string = this.constructor.getCanceledEventName(name, actionName);
 
       this.eventBuffer[changeEventName] = {};
+
       this.on(triggerEventName, (data, id): void => {
         const actionRes: Object | Promise<Object> = action(data, this);
         const setState = (stateChange: Object): void => {
-          if (!stateChange || typeof stateChange !== 'object') {
-            throw new Error(`ezFlux: "${name}.${actionName}": action did not return an Object.`);
+          if (!stateChange) {
+            this.emitOrBuffer(canceledEventName, id);
+            return;
+          }
+          if (typeof stateChange !== 'object') {
+            throw new Error(`ezFlux: "${name}.${actionName}": must return falsy value or Object.`);
           }
           Object.assign(state[name], stateChange);
           this.emitOrBuffer(changeEventName, id);
         };
+
         if (this.constructor.isPromise(actionRes)) actionRes.then(setState);
         else setState(actionRes);
       });
@@ -115,6 +123,7 @@ export default class EZFlux extends EventEmitter3 {
   }
 
   createActionTrigger(stateName: string, actionName: string): string {
+    const canceledEventName: string = this.constructor.getCanceledEventName(stateName, actionName);
     const triggerEventName: string = this.constructor.getTriggerEventName(stateName, actionName);
     const changeEventName: string = this.constructor.getChangeEventName(stateName);
 
@@ -126,9 +135,11 @@ export default class EZFlux extends EventEmitter3 {
         const eventHandler = (idDictionary) => {
           if (!idDictionary[id]) return;
           this.removeListener(changeEventName, eventHandler);
+          this.removeListener(canceledEventName, eventHandler);
           res();
         };
         this.on(changeEventName, eventHandler);
+        this.on(canceledEventName, eventHandler);
         this.emit(triggerEventName, data, id);
       });
     return triggerEventName;
