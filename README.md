@@ -238,7 +238,7 @@ Returns **Config**
 
 -   `config` **Config**
 
-### resetConfig
+### resetState
 
 Will reset the state to the value it had after ezFlux was constructed initially.
 
