@@ -30,6 +30,7 @@ Only user actions, transparent events and one enumberable state.
     -   [state](#state)
     -   [getConfig](#getconfig)
     -   [setConfig](#setconfig)
+    -   [resetState](#resetstate)
 -   [Contributing](#contributing)
 
 # Install
@@ -201,6 +202,8 @@ When config.debug is true, history will save state and event data on emission.
       time: number,
       eventName: string,
       state: Object,
+      id: Object,
+      actionPayload?: any,
     },
   };
 ```
@@ -234,6 +237,10 @@ Returns **Config**
 **Parameters**
 
 -   `config` **Config**
+
+### resetConfig
+
+Will reset the state to the value it had after ezFlux was constructed initially.
 
 
 

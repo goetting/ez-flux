@@ -46,7 +46,7 @@ export default class EZFlux extends EventEmitter3 {
     return `trigger:action.${stateName}.${actionName}`;
   }
   static getCanceledEventName(stateName: string, actionName: string): string {
-    return `canceled:action.${stateName}.${actionName}`;
+    return `aborted:action.${stateName}.${actionName}`;
   }
   static getChangeEventName(stateName: string): string {
     return `change:state.${stateName}`;
@@ -68,13 +68,17 @@ export default class EZFlux extends EventEmitter3 {
   emissionTimeout: any = null;
   state: any;
 
+  resetState: () => void;
+
   constructor(stateCfg: StateConfig = {}, options: Config & { initialState?: Object } = {}) {
     super();
-    const state = {};
+    let state = {};
+    let defaultState = {};
     const scopeNames = Object.keys(stateCfg);
     const initState = options.initialState || {};
+    const clone = this.constructor.cloneDeep.bind(this.constructor);
 
-    Object.defineProperty(this, 'state', ({ get: () => this.constructor.cloneDeep(state) }: Object));
+    Object.defineProperty(this, 'state', ({ get: () => clone(state) }: Object));
     this.setConfig(options);
 
     for (let i = scopeNames.length; i--;) {
@@ -82,10 +86,15 @@ export default class EZFlux extends EventEmitter3 {
       const { actions, values } = stateCfg[name];
 
       this.constructor.validateScope(name, values, actions);
-      state[name] = this.constructor.cloneDeep(values);
+      state[name] = clone(values);
       if (initState[name]) Object.assign(state[name], initState[name]);
       this.addScopeToEventSystem(name, actions, state);
     }
+
+    defaultState = clone(state);
+    this.resetState = () => {
+      state = clone(defaultState);
+    };
   }
 
   /*                                   Event Setup                                    */
@@ -100,7 +109,7 @@ export default class EZFlux extends EventEmitter3 {
       const changeEventName: string = this.constructor.getChangeEventName(name);
       const canceledEventName: string = this.constructor.getCanceledEventName(name, actionName);
 
-      this.on(triggerEventName, (data, id): void => {
+      this.on(triggerEventName, (id, data): void => {
         const actionRes: Object | Promise<Object> = action(data, this);
         const setState = (stateChange: Object): void => {
           if (!stateChange) {
@@ -138,7 +147,7 @@ export default class EZFlux extends EventEmitter3 {
         };
         this.on(changeEventName, eventHandler);
         this.on(canceledEventName, eventHandler);
-        this.emit(triggerEventName, data, id);
+        this.emit(triggerEventName, id, data);
       });
     return triggerEventName;
   }
@@ -173,13 +182,14 @@ export default class EZFlux extends EventEmitter3 {
 
     const state = this.state;
     const time: number = Date.now();
-    const msg: string = `ezFlux | ${time} ${eventName}`;
+    const msg: string = `ezFlux | ${eventName}`;
     const color: string = colorMap[eventName.split(':')[0]] || 'gray';
+    const [id, actionPayload] = args;
 
-    this.history[time] = { time, eventName, state };
+    this.history[time] = { time, eventName, state, id, actionPayload };
 
-    if (this.runsInBrowser) console.log(`%c${msg}`, `color:${color}`, { state });                       // eslint-disable-line no-console
-    else console.log(msg, { state });                                                                   // eslint-disable-line no-console
+    if (this.runsInBrowser) console.log(`%c${msg}`, `color:${color}`, this.history[time]);              // eslint-disable-line no-console
+    else console.log(msg, this.history[time]);                                                                   // eslint-disable-line no-console
   }
 
   /*                                   Config                                    */

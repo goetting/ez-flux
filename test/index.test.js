@@ -30,6 +30,10 @@ describe('EZFlux', () => {
     it('should set config values through setter', configSetter);
     it('should get config values', configGetter);
   });
+
+  describe('resetState', () => {
+    it('should restore the state to its initial value', resetState);
+  });
 });
 
 const { stateConfig } = testData;
@@ -165,4 +169,19 @@ function configSetter() {
 function configGetter() {
   const ez = new EZFlux(stateConfig);
   expect(ez.getConfig()).toEqual(ez.cfg);
+}
+
+async function resetState() {
+  const ez = new EZFlux(stateConfig);
+  const defaultState = ez.state;
+
+  await ez.actions.avengers.setHulk('green');
+
+  const mutatedState = ez.state;
+
+  expect(mutatedState).not.toEqual(defaultState);
+
+  ez.resetState();
+
+  expect(ez.state).toEqual(defaultState);
 }
