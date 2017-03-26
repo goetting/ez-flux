@@ -145,7 +145,17 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
     type Options = {
       // Outs event data to console and saves it in history.
       // default: false
-      debug?: boolean,
+      log?: {
+        // Outs event names to console.
+        // default: false
+        events?: boolean,
+        // Outs history data to console.
+        // default: false
+        history?: boolean,
+        // uses console.trace instead of console.log;
+        // default: false
+        trace?: boolean,
+      }
       // In browsers buffers, event emissions to animation frame.
       // default: false
       throttleUpdates?: boolean,
@@ -197,15 +207,14 @@ Returns **string**
 When config.debug is true, history will save state and event data on emission.
 
 ```TS
-  type History = {
-    [time: number]: {
-      time: number,
-      eventName: string,
-      state: Object,
-      id: Object,
-      actionPayload?: any,
-    },
+  type HistoryEntry = {
+    time: number,
+    name: string,
+    ids: Object,
+    state: Object,
+    actionPayload?: any
   };
+  type History = { [time: number]: HistoryEntry };
 ```
 
 ### actions

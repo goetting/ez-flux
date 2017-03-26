@@ -4,11 +4,16 @@ import EventEmitter3 from 'eventemitter3';
 type Action = (userData: any, state: Object) => Promise<Object> | Object;
 type Actions = { [string]: Action };
 type ActionTriggers = { [string]: any => Promise<void> };
-type Config = { debug?: boolean, throttleUpdates?: boolean };
+type Log = { events?: boolean, history?: boolean, trace?: boolean };
+type Config = { log: Log, throttleUpdates?: boolean };
+type Options = Config & { initialState?: Object };
 type StateConfig = { [name: string]: { values: Object, actions: Actions} };
-type EventBuffer = { [eventName: string]: { [id: number]: 1 } };
+type Ids = { [id: number]: 1 };
+type EventBuffer = { [eventName: string]: Ids };
+type HistoryEntry = { time: number, name: string, ids: Ids, state: Object, actionPayload?: any };
+type History = { [time: number]: HistoryEntry };
 
-const colorMap: Object = { error: 'red', trigger: 'cyan', change: 'green' };
+const colorMap: Object = { RESET: 'red', trigger: 'cyan', change: 'green' };
 let nextId = 0;
 
 export default class EZFlux extends EventEmitter3 {
@@ -51,6 +56,9 @@ export default class EZFlux extends EventEmitter3 {
   static getChangeEventName(stateName: string): string {
     return `change:state.${stateName}`;
   }
+  static getResetEventName(): string {
+    return 'RESET';
+  }
   static validateScope(name: string, values: any, actions: any) {
     if (!values || typeof values !== 'object') {
       throw new Error(`ezFlux: "${name}" must include a values object`);
@@ -60,8 +68,8 @@ export default class EZFlux extends EventEmitter3 {
     }
   }
 
-  history: { [time: number]: { time: number, eventName: string, state: Object } } = {};
-  cfg: Config = { debug: false, throttleUpdates: false };
+  history: History = {};
+  cfg: Config = { throttleUpdates: false, log: { events: false, histor: false, trace: false } };
   runsInBrowser: boolean = typeof window !== 'undefined' && !!window.requestAnimationFrame;
   actions: { [string]: ActionTriggers } = {};
   eventBuffer: EventBuffer = {};
@@ -70,7 +78,7 @@ export default class EZFlux extends EventEmitter3 {
 
   resetState: () => void;
 
-  constructor(stateCfg: StateConfig = {}, options: Config & { initialState?: Object } = {}) {
+  constructor(stateCfg: StateConfig = {}, options: Options = { log: {} }) {
     super();
     let state = {};
     let defaultState = {};
@@ -93,6 +101,8 @@ export default class EZFlux extends EventEmitter3 {
 
     defaultState = clone(state);
     this.resetState = () => {
+      this.emit(this.constructor.getResetEventName());
+
       state = clone(defaultState);
     };
   }
@@ -176,20 +186,23 @@ export default class EZFlux extends EventEmitter3 {
     });
   }
 
-  emit(eventName: string = '', ...args: any[]): void {
-    super.emit(eventName, ...args);
-    if (!this.cfg.debug) return;
+  emit(name: string = '', ...args: any[]): void {
+    super.emit(name, ...args);
+    if (this.cfg.log) return;
 
-    const state = this.state;
     const time: number = Date.now();
-    const msg: string = `ezFlux | ${eventName}`;
-    const color: string = colorMap[eventName.split(':')[0]] || 'gray';
+    const msg: string = `ezFlux | ${name}`;
+    const color: string = colorMap[name.split(':')[0]] || 'gray';
     const [id, actionPayload] = args;
+    const logArgs = [];
 
-    this.history[time] = { time, eventName, state, id, actionPayload };
+    this.history[time] = { time, name, ids: id, state: this.state };
+    if (actionPayload) this.history[time].actionPayload = actionPayload;
 
-    if (this.runsInBrowser) console.log(`%c${msg}`, `color:${color}`, this.history[time]);              // eslint-disable-line no-console
-    else console.log(msg, this.history[time]);                                                                   // eslint-disable-line no-console
+    if (this.cfg.log.events) logArgs.push(this.runsInBrowser ? (`%c${msg}`, `color:${color}`) : msg);
+    if (this.cfg.log.history) logArgs.push(this.history[time]);
+
+    console[this.cfg.log.trace ? 'trace' : 'log'](...logArgs);                                        // eslint-disable-line no-console
   }
 
   /*                                   Config                                    */
@@ -198,8 +211,8 @@ export default class EZFlux extends EventEmitter3 {
     return Object.assign({}, this.cfg);
   }
 
-  setConfig(cfg: Config = {}): void {
+  setConfig(cfg: Config = { log: {} }): void {
     if (typeof cfg.throttleUpdates === 'boolean') this.cfg.throttleUpdates = cfg.throttleUpdates;
-    if (typeof cfg.debug === 'boolean') this.cfg.debug = cfg.debug;
+    if (typeof cfg.log === 'object') Object.assign(this.cfg.log, cfg.log);
   }
 }

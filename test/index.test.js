@@ -26,8 +26,8 @@ describe('EZFlux', () => {
   });
 
   describe('config', () => {
-    it('should set config values while constructing', configConstruction);
     it('should set config values through setter', configSetter);
+    it('should set config values while constructing', configConstruction);
     it('should get config values', configGetter);
   });
 
@@ -153,16 +153,17 @@ function asyncActions() {
     })
 }
 
-function configConstruction() {
-  const ez = new EZFlux(stateConfig);
-
-  expect(ez.cfg.debug).toEqual(false);
-}
 
 function configSetter() {
   const ez = new EZFlux(stateConfig);
   expect(ez.cfg.throttleUpdates).toEqual(false);
   ez.setConfig({ throttleUpdates: true });
+  expect(ez.cfg.throttleUpdates).toEqual(true);
+}
+
+function configConstruction() {
+  const ez = new EZFlux(stateConfig, { throttleUpdates: true });
+
   expect(ez.cfg.throttleUpdates).toEqual(true);
 }
 
