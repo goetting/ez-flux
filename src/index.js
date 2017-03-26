@@ -10,7 +10,7 @@ type Options = Config & { initialState?: Object };
 type StateConfig = { [name: string]: { values: Object, actions: Actions} };
 type Ids = { [id: number]: 1 };
 type EventBuffer = { [eventName: string]: Ids };
-type HistoryEntry = { time: number, name: string, ids: Ids, state: Object, actionPayload?: any };
+type HistoryEntry = { time: number, name: string, id?: Ids | number, state: Object, payload?: any };
 type History = { [time: number]: HistoryEntry };
 
 const colorMap: Object = { RESET: 'red', trigger: 'cyan', change: 'green' };
@@ -186,23 +186,22 @@ export default class EZFlux extends EventEmitter3 {
     });
   }
 
-  emit(name: string = '', ...args: any[]): void {
-    super.emit(name, ...args);
-    if (!this.cfg.log.envents && !this.cfg.log.history) return;
+  emit(name: string = '', id?: Ids | number, payload?: any): void {
+    super.emit(name, id, payload);
+    if (!this.cfg.log.events && !this.cfg.log.history) return;
 
     const time: number = Date.now();
     const msg: string = `ezFlux | ${name}`;
     const color: string = colorMap[name.split(':')[0]] || 'gray';
-    const [id, actionPayload] = args;
-    const log = [];
+    let log = [];
 
-    this.history[time] = { time, name, ids: id, state: this.state };
-    if (actionPayload) this.history[time].actionPayload = actionPayload;
+    this.history[time] = { time, name, id, state: this.state };
+    if (payload) this.history[time].payload = payload;
 
-    if (this.cfg.log.events) log.concat(this.runsInBrowser ? [`%c${msg}`, `color:${color}`] : [msg]);
+    if (this.cfg.log.events) log = this.runsInBrowser ? [`%c${msg}`, `color:${color}`] : [msg];
     if (this.cfg.log.history) log.push(this.history[time]);
 
-    console[this.cfg.log.trace ? 'trace' : 'log'](...log);                                        // eslint-disable-line no-console
+    console[this.cfg.log.trace ? 'trace' : 'log'](...log);                                            // eslint-disable-line no-console
   }
 
   /*                                   Config                                    */

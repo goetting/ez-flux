@@ -210,9 +210,9 @@ When config.debug is true, history will save state and event data on emission.
   type HistoryEntry = {
     time: number,
     name: string,
-    ids: Object,
+    id: Object | number,
     state: Object,
-    actionPayload?: any
+    payload?: any
   };
   type History = { [time: number]: HistoryEntry };
 ```
