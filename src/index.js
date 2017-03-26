@@ -69,7 +69,7 @@ export default class EZFlux extends EventEmitter3 {
   }
 
   history: History = {};
-  cfg: Config = { throttleUpdates: false, log: { events: false, histor: false, trace: false } };
+  cfg: Config = { throttleUpdates: false, log: { events: false, history: false, trace: false } };
   runsInBrowser: boolean = typeof window !== 'undefined' && !!window.requestAnimationFrame;
   actions: { [string]: ActionTriggers } = {};
   eventBuffer: EventBuffer = {};
@@ -188,21 +188,21 @@ export default class EZFlux extends EventEmitter3 {
 
   emit(name: string = '', ...args: any[]): void {
     super.emit(name, ...args);
-    if (this.cfg.log) return;
+    if (!this.cfg.log.envents && !this.cfg.log.history) return;
 
     const time: number = Date.now();
     const msg: string = `ezFlux | ${name}`;
     const color: string = colorMap[name.split(':')[0]] || 'gray';
     const [id, actionPayload] = args;
-    const logArgs = [];
+    const log = [];
 
     this.history[time] = { time, name, ids: id, state: this.state };
     if (actionPayload) this.history[time].actionPayload = actionPayload;
 
-    if (this.cfg.log.events) logArgs.push(this.runsInBrowser ? (`%c${msg}`, `color:${color}`) : msg);
-    if (this.cfg.log.history) logArgs.push(this.history[time]);
+    if (this.cfg.log.events) log.concat(this.runsInBrowser ? [`%c${msg}`, `color:${color}`] : [msg]);
+    if (this.cfg.log.history) log.push(this.history[time]);
 
-    console[this.cfg.log.trace ? 'trace' : 'log'](...logArgs);                                        // eslint-disable-line no-console
+    console[this.cfg.log.trace ? 'trace' : 'log'](...log);                                        // eslint-disable-line no-console
   }
 
   /*                                   Config                                    */
