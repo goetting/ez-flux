@@ -18,6 +18,7 @@ describe('EZFlux', () => {
 
   describe('actions', () => {
     it('should be triggered by actionTriggers with the appropriate data passed', actionsCallable);
+    it('should have the ez bound to it', actionsBound);
     it('should fail to change state if setState was called truthy and !object', actionsWrongStateVal);
     it('should cancel action if setState was falsy', actionsCancel);
     it('should fire trigger event and state change event on statechange', stateChangeEvents);
@@ -98,6 +99,16 @@ async function actionsCallable() {
   try { await ez.actions.avengers.setHulk('green'); }
   catch(e) { throw e; }
   expect(ez.state.avengers.hulk).toEqual('green');
+}
+
+async function actionsBound() {
+  let ez = null;
+  const datStateConfig = EZFlux.cloneDeep(stateConfig)
+  datStateConfig.avengers.actions.datAction = function() {expect(this).toEqual(ez)};
+
+  ez = new EZFlux(datStateConfig);
+
+  ez.actions.avengers.datAction();
 }
 
 async function actionsWrongStateVal() {

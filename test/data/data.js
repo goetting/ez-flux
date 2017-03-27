@@ -9,10 +9,10 @@ export default {
           await timeout(1000);
           return { hulk: 'green', ironMan: 'suited up', thor: 'hammered', ready: true }
         },
-        setHulk(data, { state }) {
-          return { hulk: data, ready: state.avengers.ready && data.hulk === 'green' };
+        setHulk(data, values) {
+          return { hulk: data, ready: values.ready && data.hulk === 'green' };
         },
-        setData: data => data,
+        setData: (data, values) => data,
       },
     },
   },

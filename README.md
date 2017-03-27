@@ -134,7 +134,11 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
         // Returned Object | Promsise<Object> will be applied to the stateNameSpace
         // Returned void will result in the action being canceled
         actions: {
-          [actionName: any]: (userData: any, ezFlux: typeof EZFlux) => void | Object | Promise<Object>,
+          [actionName: any]: (
+            userData: any,
+            scopeValuesClone: Object,
+            ezFlux: typeof EZFlux,
+          ) => void | Object | Promise<Object>,
         },
       },
     };

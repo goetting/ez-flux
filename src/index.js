@@ -114,13 +114,14 @@ export default class EZFlux extends EventEmitter3 {
 
     for (let i = actionNames.length; i--;) {
       const actionName: string = actionNames[i];
-      const action: Action = actions[actionName];
+      const action: Action = actions[actionName].bind(this);
       const triggerEventName: string = this.createActionTrigger(name, actionName);
       const changeEventName: string = this.constructor.getChangeEventName(name);
       const canceledEventName: string = this.constructor.getCanceledEventName(name, actionName);
 
-      this.on(triggerEventName, (id, data): void => {
-        const actionRes: Object | Promise<Object> = action(data, this);
+      this.on(triggerEventName, (id, payload): void => {
+        const clonedStateValues = this.constructor.cloneDeep(state[name]);
+        const actionRes: Object | Promise<Object> = action(payload, clonedStateValues, this);
         const setState = (stateChange: Object): void => {
           if (!stateChange) {
             this.emitOrBuffer(canceledEventName, id);
