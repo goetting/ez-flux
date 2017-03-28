@@ -3,11 +3,29 @@ import EventEmitter3 from 'eventemitter3';
 
 type Action = (userData: any, state: Object) => Promise<Object> | Object;
 type Actions = { [string]: Action };
+type BeforeAction = (
+  payload: any,
+  values: Object,
+  ezFlux: any,
+  actionName: string
+) => Object | Promise<Object>;
+type AfterAction = (
+  payload: any,
+  values: Object,
+  ezFlux: Object,
+  actionName: string
+) => Object | Promise<Object>;
+type ScopeConfig = {
+  values: Object,
+  actions: Actions,
+  beforeAction?: BeforeAction,
+  afterAction?: AfterAction,
+};
+type StateConfig = { [name: string]: ScopeConfig };
 type ActionTriggers = { [string]: any => Promise<void> };
 type Log = { events?: boolean, history?: boolean, trace?: boolean };
 type Config = { log: Log, throttleUpdates?: boolean };
 type Options = Config & { initialState?: Object };
-type StateConfig = { [name: string]: { values: Object, actions: Actions} };
 type Ids = { [id: number]: 1 };
 type EventBuffer = { [eventName: string]: Ids };
 type HistoryEntry = { time: number, name: string, id?: Ids | number, state: Object, payload?: any };
@@ -59,12 +77,18 @@ export default class EZFlux extends EventEmitter3 {
   static getResetEventName(): string {
     return 'RESET';
   }
-  static validateScope(name: string, values: any, actions: any) {
+  static validateScope(name: string, { values, actions, afterAction, beforeAction }: ScopeConfig) {
     if (!values || typeof values !== 'object') {
       throw new Error(`ezFlux: "${name}" must include a values object`);
     }
     if (!actions || Object.keys(actions).find(key => typeof actions[key] !== 'function')) {
       throw new Error(`ezFlux: "${name}" actions must include dictionary of functions`);
+    }
+    if (afterAction && typeof afterAction !== 'function') {
+      throw new Error(`ezFlux: "${name}" 'afterAction' must be a function or undefined`);
+    }
+    if (afterAction && typeof beforeAction !== 'function') {
+      throw new Error(`ezFlux: "${name}" 'beforeAction' must be a function or undefined`);
     }
   }
 
@@ -91,12 +115,12 @@ export default class EZFlux extends EventEmitter3 {
 
     for (let i = scopeNames.length; i--;) {
       const name = scopeNames[i];
-      const { actions, values } = stateCfg[name];
+      const scopeConfig: ScopeConfig = stateCfg[name];
 
-      this.constructor.validateScope(name, values, actions);
-      state[name] = clone(values);
+      this.constructor.validateScope(name, stateCfg[name]);
+      state[name] = clone(scopeConfig.values);
       if (initState[name]) Object.assign(state[name], initState[name]);
-      this.addScopeToEventSystem(name, actions, state);
+      this.addScopeToEventSystem(state, name, scopeConfig);
     }
 
     defaultState = clone(state);
@@ -109,48 +133,72 @@ export default class EZFlux extends EventEmitter3 {
 
   /*                                   Event Setup                                    */
 
-  addScopeToEventSystem(name: string, actions: Actions, state: Object): void {
-    const actionNames = Object.keys(actions);
+  addScopeToEventSystem(state: Object, name: string, scopeConfig: ScopeConfig): void {
+    const actionNames = Object.keys(scopeConfig.actions);
+    let { beforeAction, afterAction } = scopeConfig;
+
+    if (beforeAction) beforeAction = beforeAction.bind(this);
+    if (afterAction) afterAction = afterAction.bind(this);
+
 
     for (let i = actionNames.length; i--;) {
       const actionName: string = actionNames[i];
-      const action: Action = actions[actionName].bind(this);
-      const triggerEventName: string = this.createActionTrigger(name, actionName);
-      const changeEventName: string = this.constructor.getChangeEventName(name);
-      const canceledEventName: string = this.constructor.getCanceledEventName(name, actionName);
+      const action: Action = scopeConfig.actions[actionName].bind(this);
 
-      this.on(triggerEventName, (id, payload): void => {
-        const clonedStateValues = this.constructor.cloneDeep(state[name]);
-        const actionRes: Object | Promise<Object> = action(payload, clonedStateValues, this);
-        const setState = (stateChange: Object): void => {
-          if (!stateChange) {
-            this.emitOrBuffer(canceledEventName, id);
-            return;
-          }
-          if (typeof stateChange !== 'object') {
-            throw new Error(`ezFlux: "${name}.${actionName}": must return falsy value or Object.`);
-          }
-          Object.assign(state[name], stateChange);
-          this.emitOrBuffer(changeEventName, id);
-        };
-
-        if (this.constructor.isPromise(actionRes)) actionRes.then(setState);
-        else setState(actionRes);
-      });
+      this.addActionTrigger(name, actionName);
+      this.addActionTriggerListener(state, name, actionName, action, beforeAction, afterAction);
     }
   }
 
-  createActionTrigger(stateName: string, actionName: string): string {
-    const canceledEventName: string = this.constructor.getCanceledEventName(stateName, actionName);
-    const triggerEventName: string = this.constructor.getTriggerEventName(stateName, actionName);
-    const changeEventName: string = this.constructor.getChangeEventName(stateName);
+  addActionTriggerListener(
+    state: Object,
+    scopeName: string,
+    actionName: string,
+    action: Action,
+    beforeAction: BeforeAction | void,
+    afterAction: AfterAction | void,
+  ) {
+    const triggerEventName: string = this.constructor.getTriggerEventName(scopeName, actionName);
+    const changeEventName: string = this.constructor.getChangeEventName(scopeName);
+    const canceledEventName: string = this.constructor.getCanceledEventName(scopeName, actionName);
 
-    if (!this.actions[stateName]) this.actions[stateName] = {};
+    this.on(triggerEventName, async (id, payload): Promise<void> => {
+      const stateChange = this.constructor.cloneDeep(state[scopeName]);
+      const attemptToAssignResult = async (method: Function | void): Promise<boolean> => {
+        if (!method) return true;
+        const actionResult = await method(payload, stateChange, this, actionName);
 
-    this.actions[stateName][actionName] = (data: any): Promise<void> =>
+        if (!actionResult || typeof actionResult !== 'object') {
+          return false;
+        }
+        Object.assign(stateChange, actionResult);
+        return true;
+      };
+
+      if (
+        await attemptToAssignResult(beforeAction) &&
+        await attemptToAssignResult(action) &&
+        await attemptToAssignResult(afterAction)
+      ) {
+        Object.assign(state[scopeName], stateChange);
+        this.emitOrBuffer(changeEventName, id);
+      } else {
+        this.emitOrBuffer(canceledEventName, id);
+      }
+    });
+  }
+
+  addActionTrigger(scopeName: string, actionName: string) {
+    const canceledEventName: string = this.constructor.getCanceledEventName(scopeName, actionName);
+    const triggerEventName: string = this.constructor.getTriggerEventName(scopeName, actionName);
+    const changeEventName: string = this.constructor.getChangeEventName(scopeName);
+
+    if (!this.actions[scopeName]) this.actions[scopeName] = {};
+
+    this.actions[scopeName][actionName] = (data: any): Promise<void> =>
       new Promise((res) => {
         const id = this.constructor.generateUID();
-        const eventHandler = (idDictionary) => {
+        const eventHandler = (idDictionary: Ids): void => {
           if (!idDictionary[id]) return;
           this.removeListener(changeEventName, eventHandler);
           this.removeListener(canceledEventName, eventHandler);
@@ -160,7 +208,6 @@ export default class EZFlux extends EventEmitter3 {
         this.on(canceledEventName, eventHandler);
         this.emit(triggerEventName, id, data);
       });
-    return triggerEventName;
   }
 
   /*                                   Event Handling                                    */
@@ -170,9 +217,9 @@ export default class EZFlux extends EventEmitter3 {
       this.emit(eventName, { [id]: 1 });
       return;
     }
-    if (!this.eventBuffer[eventName]) this.eventBuffer[eventName] = {};
-
+    if (!this.eventBuffer[eventName]) this.eventBuffer[eventName] = { [id]: 1 };
     this.eventBuffer[eventName][id] = 1;
+
     window.cancelAnimationFrame(this.emissionTimeout);
 
     this.emissionTimeout = window.requestAnimationFrame(() => {

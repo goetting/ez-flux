@@ -19,11 +19,12 @@ describe('EZFlux', () => {
   describe('actions', () => {
     it('should be triggered by actionTriggers with the appropriate data passed', actionsCallable);
     it('should have the ez bound to it', actionsBound);
-    it('should fail to change state if setState was called truthy and !object', actionsWrongStateVal);
-    it('should cancel action if setState was falsy', actionsCancel);
+    it('should cancel action if setState was not an Object', actionsCancel);
     it('should fire trigger event and state change event on statechange', stateChangeEvents);
     it('should return a promise', actionReturnsPromise);
     it('should set states asynchronously propperly', asyncActions);
+    it('should be called after "beforeAction" when given', beforeAction);
+    it('should be called before "afterAction" when given', afterAction);
   });
 
   describe('config', () => {
@@ -111,14 +112,6 @@ async function actionsBound() {
   ez.actions.avengers.datAction();
 }
 
-async function actionsWrongStateVal() {
-  const ez = new EZFlux(stateConfig)
-  let err = null;
-
-  try { await ez.actions.avengers.setData('this should blow up'); }
-  catch(e) { err = e; }
-  expect(err).toBeTruthy();
-}
 
 async function actionsCancel() {
   const ez = new EZFlux(stateConfig);
@@ -164,6 +157,13 @@ function asyncActions() {
     })
 }
 
+function beforeAction() {
+  const ez = new EZFlux(stateConfig);
+}
+
+function afterAction() {
+  const ez = new EZFlux(stateConfig);
+}
 
 function configSetter() {
   const ez = new EZFlux(stateConfig);

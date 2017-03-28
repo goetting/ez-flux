@@ -132,11 +132,11 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
         // Value members must not be functions/classes or circular.
         values: Object,
         // Returned Object | Promsise<Object> will be applied to the stateNameSpace
-        // Returned void will result in the action being canceled
+        // Returned void will result in the action being aborted
         actions: {
           [actionName: any]: (
-            userData: any,
-            scopeValuesClone: Object,
+            payload: any,
+            valuesClone: Object,
             ezFlux: typeof EZFlux,
           ) => void | Object | Promise<Object>,
         },
@@ -229,7 +229,7 @@ Please note that an action may be called with only one arguement.
 ```TS
   type Actions = {
     [stateScopeName: any]: {
-      [actionName: any]: (userData: any) => Promise<void>,
+      [actionName: any]: (payload: any) => Promise<void>,
     },
   };
 ```
