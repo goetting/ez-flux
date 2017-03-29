@@ -24,7 +24,6 @@ Only user actions, transparent events and one enumberable state.
     -   [EventEmitter3](#eventemitter3)
     -   [constructor](#constructor)
     -   [static deepClone](#static-deepclone)
-    -   [static isPromise](#static-ispromise)
     -   [static getTriggerEventName](#static-gettriggereventname)
     -   [static getChangeEventName](#static-getchangeeventname)
     -   [static getCanceledEventName](#static-getcanceledeventname)
@@ -240,15 +239,6 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
 -   `sourceValue` **any**
 
 Returns **any**
-
-### _static_ isPromise
-
-Will return true if potentialPromise.then is typeof function.
-
-**parameters**
--   `potentialPromise` **any**
-
-Returns **boolean**
 
 ### _static_ getTriggerEventName
 **parameters**
