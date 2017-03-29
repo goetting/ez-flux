@@ -6,7 +6,7 @@ export default {
       values: { hulk: 'normal', ironMan: 'normal', thor: 'normal', ready: false, someArray: [] },
       actions: {
         setAvengersReady: async () => {
-          await timeout(1000);
+          await timeout(100);
           return { hulk: 'green', ironMan: 'suited up', thor: 'hammered', ready: true }
         },
         setHulk(data, values) {

@@ -16,6 +16,9 @@ Only user actions, transparent events and one enumberable state.
 
 -   [Install](#install)
 -   [Usage](#usage)
+    -   [Getting Started](#getting-started)
+    -   [Async Actions](#async-actions)
+    -   [Middleware](#middleware)
 -   [More EZ Libraries](#more-ez-libraries)
 -   [API Documentation](#api-documentation)
     -   [EventEmitter3](#eventemitter3)
@@ -43,6 +46,9 @@ $ npm install ez-flux --save
 ```
 
 # Usage
+
+### Getting Started
+
 EZFlux expects a dictionary of state-namespaces with values and actions.
 The returned Object of an action will be Object.assigned to the values of the state-namespace.
 
@@ -74,6 +80,8 @@ ezFlux.on('change:state.weather', () => console.log(ezFlux.state.weather) );
 ezFlux.actions.weather.setRain(true);
 // Triggers our action. Our listener will now log: { rain: true };
 ```
+
+### Async Actions
 
 ezFlux also supports asynchronous behaviour. An action may be an async function, potentially acceping a promise as a return value.
 
@@ -111,6 +119,50 @@ aync function renderCityWeather(city) {
 You may freely use this behavour to orchestrate more complex workflows.
 The ezFlux will still emit the propper events for actions triggered and states changed to anyone subscribed.
 
+### Middleware
+
+EZFlux allow _beforeActions_ and _afterActions_ to be called with any action of a state scope.
+
+```JS
+import EZFlux from 'ez-flux';
+import accessLayer from './access-layer';
+
+const ezFlux = new EZFlux({
+  weather: {
+    values: {
+      rain: false,
+      temperatureDegC: 0,
+      feels: 'bad'
+    },
+    actions: {
+      setRain: rain => ({ rain }),
+      loadData: async (query) => {
+        // assume we retreive temperature as a number
+        const { temperature, rain } = await apiCall(query);
+
+        return { temperature, rain };
+      },
+    },
+    // lets ask for permission first - cancel if we don't get it.
+    beforeAction: async (payload, stateValues, actionName) => {
+      const userIsAuthorized = await accessLayer.requestUserAuthorization();
+      
+      if (!userIsAuthorized) return false;
+      
+      return stateValues;
+    },
+    // project the feeling of the current weather after any action call
+    afterAction: (payload, { temperature, rain }) => {
+      return { feels: (temperature < 20 || rain) ? 'bad' : 'good' };
+    },
+  },
+});
+```
+
+Just like actions, these methods may be async.
+Also, they will cancel an action by not returning an Object or a Promise<Object>.
+
+
 # More EZ Libraries
 
 If you wish to use ezFlux with [React](https://facebook.github.io/react/), [Inferno](https://infernojs.org/), [Preact](https://preactjs.com/) or any other react-compatible library:
@@ -140,6 +192,22 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
             ezFlux: typeof EZFlux,
           ) => void | Object | Promise<Object>,
         },
+        // Will be Called before any action of this scope. 
+        // Return rules are the same as for an action
+        beforeActions?: (
+          payload: any,
+          currentValuesClone: Object,
+          actionName: string,
+          ezFlux: typeof EZFlux
+        ) => void | Object | Promise<Object>,
+        // Will be Called after any action of this scope. 
+        // Return rules are the same as for an action
+        afterActions?: (
+          payload: any,
+          changedValuesClone: Object,
+          actionName: string,
+          ezFlux: typeof EZFlux
+        ) => void | Object | Promise<Object>,
       },
     };
   ```
@@ -280,4 +348,3 @@ To generate test coverage report:
 ```sh
 $ npm run test:coverage
 ```
-

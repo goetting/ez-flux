@@ -149,21 +149,50 @@ function asyncActions() {
     .then(() => {
       clearInterval(interval);
       expect(ez.state.avengers.ready).toEqual(true);
-      expect(ms > 500).toBeTruthy();
+      expect(ms > 50).toBeTruthy();
     })
     .catch(e => {
       clearInterval(interval);
       expect(true).toBeFalsy();
-    })
+    });
 }
 
-function beforeAction() {
-  const ez = new EZFlux(stateConfig);
+async function beforeAction() {
+  const beforeActionsStateConfig = EZFlux.cloneDeep(stateConfig);
+  beforeActionsStateConfig.avengers.beforeActions = (payload, stateChange, actionName, ezFlux) => {
+    expect(payload).toEqual('green');
+    expect(stateChange).toEqual(ez.state.avengers);
+    expect(actionName).toEqual('setHulk');
+    expect(ezFlux instanceof EZFlux);
+    expect(this instanceof EZFlux);
+
+    return { teddy: true };
+  };
+  const ez = new EZFlux(beforeActionsStateConfig, { log: {events: true} });
+
+  await ez.actions.avengers.setHulk('green');
+
+  expect(ez.state.avengers.teddy).toEqual(true);
 }
 
-function afterAction() {
-  const ez = new EZFlux(stateConfig);
+async function afterAction() {
+  const afterActionsStateConfig = EZFlux.cloneDeep(stateConfig);
+  afterActionsStateConfig.avengers.afterActions = (payload, stateChange, actionName, ezFlux) => {
+    expect(payload).toEqual('green');
+    expect(stateChange).toEqual(Object.assign({}, ez.state.avengers, { hulk: 'green' }));
+    expect(actionName).toEqual('setHulk');
+    expect(ezFlux instanceof EZFlux);
+    expect(this instanceof EZFlux);
+
+    return { hulk: 'red' };
+  };
+  const ez = new EZFlux(afterActionsStateConfig, { log: {events: true} });
+
+  await ez.actions.avengers.setHulk('green');
+
+  expect(ez.state.avengers.hulk).toEqual('red');
 }
+
 
 function configSetter() {
   const ez = new EZFlux(stateConfig);

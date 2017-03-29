@@ -18,8 +18,8 @@ type AfterAction = (
 type ScopeConfig = {
   values: Object,
   actions: Actions,
-  beforeAction?: BeforeAction,
-  afterAction?: AfterAction,
+  beforeActions?: BeforeAction,
+  afterActions?: AfterAction,
 };
 type StateConfig = { [name: string]: ScopeConfig };
 type ActionTriggers = { [string]: any => Promise<void> };
@@ -59,9 +59,6 @@ export default class EZFlux extends EventEmitter3 {
     }
     return objClone;
   }
-  static isPromise(val: any): boolean {
-    return val && typeof val.then === 'function';
-  }
   static generateUID(): number {
     return nextId++;
   }
@@ -77,18 +74,21 @@ export default class EZFlux extends EventEmitter3 {
   static getResetEventName(): string {
     return 'RESET';
   }
-  static validateScope(name: string, { values, actions, afterAction, beforeAction }: ScopeConfig) {
+  static validateScope(
+    name: string,
+    { values, actions, afterActions, beforeActions }: ScopeConfig,
+  ): void {
     if (!values || typeof values !== 'object') {
       throw new Error(`ezFlux: "${name}" must include a values object`);
     }
     if (!actions || Object.keys(actions).find(key => typeof actions[key] !== 'function')) {
       throw new Error(`ezFlux: "${name}" actions must include dictionary of functions`);
     }
-    if (afterAction && typeof afterAction !== 'function') {
-      throw new Error(`ezFlux: "${name}" 'afterAction' must be a function or undefined`);
+    if (afterActions && typeof afterActions !== 'function') {
+      throw new Error(`ezFlux: "${name}" 'afterActions' must be a function or undefined`);
     }
-    if (afterAction && typeof beforeAction !== 'function') {
-      throw new Error(`ezFlux: "${name}" 'beforeAction' must be a function or undefined`);
+    if (beforeActions && typeof beforeActions !== 'function') {
+      throw new Error(`ezFlux: "${name}" 'beforeActions' must be a function or undefined`);
     }
   }
 
@@ -135,18 +135,14 @@ export default class EZFlux extends EventEmitter3 {
 
   addScopeToEventSystem(state: Object, name: string, scopeConfig: ScopeConfig): void {
     const actionNames = Object.keys(scopeConfig.actions);
-    let { beforeAction, afterAction } = scopeConfig;
-
-    if (beforeAction) beforeAction = beforeAction.bind(this);
-    if (afterAction) afterAction = afterAction.bind(this);
-
+    const { beforeActions, afterActions, actions } = scopeConfig;
 
     for (let i = actionNames.length; i--;) {
       const actionName: string = actionNames[i];
-      const action: Action = scopeConfig.actions[actionName].bind(this);
+      const action: Action = actions[actionName].bind(this);
 
       this.addActionTrigger(name, actionName);
-      this.addActionTriggerListener(state, name, actionName, action, beforeAction, afterAction);
+      this.addActionTriggerListener(state, name, actionName, action, beforeActions, afterActions);
     }
   }
 
@@ -155,31 +151,32 @@ export default class EZFlux extends EventEmitter3 {
     scopeName: string,
     actionName: string,
     action: Action,
-    beforeAction: BeforeAction | void,
-    afterAction: AfterAction | void,
+    beforeActions: BeforeAction | void,
+    afterActions: AfterAction | void,
   ) {
     const triggerEventName: string = this.constructor.getTriggerEventName(scopeName, actionName);
     const changeEventName: string = this.constructor.getChangeEventName(scopeName);
     const canceledEventName: string = this.constructor.getCanceledEventName(scopeName, actionName);
+    const actionFlow: Function[] = [action];
+
+    if (beforeActions) actionFlow.push(beforeActions.bind(this));
+    if (afterActions) actionFlow.unshift(afterActions.bind(this));
 
     this.on(triggerEventName, async (id, payload): Promise<void> => {
       const stateChange = this.constructor.cloneDeep(state[scopeName]);
-      const attemptToAssignResult = async (method: Function | void): Promise<boolean> => {
-        if (!method) return true;
-        const actionResult = await method(payload, stateChange, this, actionName);
+      const callAndCheck = async (method: Function): Promise<boolean> => {
+        const actionResult = await method(payload, stateChange, actionName, this);
+        const isValidResult = actionResult && typeof actionResult === 'object';
 
-        if (!actionResult || typeof actionResult !== 'object') {
-          return false;
-        }
-        Object.assign(stateChange, actionResult);
-        return true;
+        if (isValidResult) Object.assign(stateChange, actionResult);
+        return isValidResult;
       };
+      let success = true;
 
-      if (
-        await attemptToAssignResult(beforeAction) &&
-        await attemptToAssignResult(action) &&
-        await attemptToAssignResult(afterAction)
-      ) {
+      for (let i = actionFlow.length; i-- && success;) {
+        success = await callAndCheck(actionFlow[i]);
+      }
+      if (success) {
         Object.assign(state[scopeName], stateChange);
         this.emitOrBuffer(changeEventName, id);
       } else {
@@ -198,8 +195,8 @@ export default class EZFlux extends EventEmitter3 {
     this.actions[scopeName][actionName] = (data: any): Promise<void> =>
       new Promise((res) => {
         const id = this.constructor.generateUID();
-        const eventHandler = (idDictionary: Ids): void => {
-          if (!idDictionary[id]) return;
+        const eventHandler = (ids: Ids): void => {
+          if (!ids[id]) return;
           this.removeListener(changeEventName, eventHandler);
           this.removeListener(canceledEventName, eventHandler);
           res();
