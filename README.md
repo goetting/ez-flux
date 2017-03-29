@@ -121,7 +121,9 @@ The ezFlux will still emit the propper events for actions triggered and states c
 
 ### Middleware
 
-EZFlux allow _beforeActions_ and _afterActions_ to be called with any action of a state scope.
+EZFlux allow _beforeActions_ and _afterActions_ to be called with any action of a state scope.  
+Just like actions, these methods may be async.  
+Also, they will cancel an action by not returning an Object or a Promise<Object>.
 
 ```JS
 import EZFlux from 'ez-flux';
@@ -130,37 +132,31 @@ import accessLayer from './access-layer';
 const ezFlux = new EZFlux({
   weather: {
     values: {
-      rain: false,
-      temperatureDegC: 0,
+      rain: true,
+      temperature: 0,
       feels: 'bad'
     },
     actions: {
       setRain: rain => ({ rain }),
       loadData: async (query) => {
-        // assume we retreive temperature as a number
         const { temperature, rain } = await apiCall(query);
 
         return { temperature, rain };
       },
     },
-    // lets ask for permission first - cancel if we don't get it.
-    beforeAction: async (payload, stateValues, actionName) => {
-      const userIsAuthorized = await accessLayer.requestUserAuthorization();
-      
-      if (!userIsAuthorized) return false;
-      
-      return stateValues;
+    beforeAction: async function checkAccess() => {
+      const accessGranted = await accessLayer.requestUserAuthorization();
+
+      return accessGranted ? stateValues : false;
     },
-    // project the feeling of the current weather after any action call
-    afterAction: (payload, { temperature, rain }) => {
+    afterAction: function projectData(payload, stateValues) {
+      const { temperature, rain } = stateValues;
+
       return { feels: (temperature < 20 || rain) ? 'bad' : 'good' };
     },
   },
 });
 ```
-
-Just like actions, these methods may be async.
-Also, they will cancel an action by not returning an Object or a Promise<Object>.
 
 
 # More EZ Libraries
