@@ -28,6 +28,7 @@ Only user actions, transparent events and one enumberable state.
     -   [static getTriggerEventName](#static-gettriggereventname)
     -   [static getChangeEventName](#static-getchangeeventname)
     -   [static getCanceledEventName](#static-getcanceledeventname)
+    -   [static getResetEventName](#static-getreseteventname)
     -   [history](#history)
     -   [actions](#actions)
     -   [state](#state)
@@ -82,10 +83,14 @@ ezFlux.actions.weather.setRain(true);
 // Triggers our action. Our listener will now log: { rain: true };
 ```
 
+Please note that only primitive state values will be save guarded through Object.freeze and cloning.  
+Thus, it's strongly discouraged to use nested objects as state values.
+
 ### Async Actions
 
-ezFlux also supports asynchronous behaviour. An action may be an async function, potentially acceping a promise as a return value.
-By default, all actions are asyncronous and return promises. Their code will always be executed in the next tick.
+By default, all actions are executed asyncronously with their triggers returning promises.
+Their code will always be executed in the next tick.
+As a result an action may be an async function, potentially acceping a promise as a return value.
 
 ```JS
 import EZFlux from 'ez-flux';
@@ -118,14 +123,14 @@ aync function renderCityWeather(city) {
   renderData(weather);
 }
 ```
-You may freely use this behavour to orchestrate more complex workflows.
-The ezFlux will still emit the propper events for actions triggered and states changed to anyone subscribed.
+You may freely use this behavour to orchestrate more complex workflows.  
+The EZFlux instance will still emit the propper events for actions triggered and states changed to anyone subscribed.
 
 ### Middleware
 
-EZFlux allow _beforeActions_ and _afterActions_ to be called with any action of a state scope.  
+With any actions _beforeActions_ and _afterActions_ will be executed when given.  
 Just like actions, these methods may be async.  
-Also, they will cancel an action by not returning an Object or a Promise<Object>.
+Also, they will cancel an action if no Object or Promise<Object> was returned.
 
 ```JS
 import EZFlux from 'ez-flux';
@@ -180,6 +185,8 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
     type StateConfig = {
       [stateNameSpace: any]: {
         // Value members must not be functions/classes or circular.
+        // Value members should not be Objects or Arrays.
+        // Only the first dimension will be frozen and save guarded.
         values: Object,
         // Returned Object | Promsise<Object> will be applied to the stateNameSpace
         // Returned void will result in the action being aborted
@@ -241,27 +248,33 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
 
 ### _static_ nextTick
 
-Will resolve promise after a 0-ms timeout has been resolved.
+Will resolve promise after a 0-ms timeout.
 
 Returns ***Promise<void>***
 
 ### _static_ getTriggerEventName
 **parameters**
--   `stateName` **string**
+-   `stateScopeName` **string**
 -   `actionName` **string**
 
 Returns **string**
 
 ### _static_ getChangeEventName
 **parameters**
--   `stateName` **string**
+-   `stateScopeName` **string**
 
 Returns **string**
 
 ### _static_ static getCanceledEventName
 **Parameters**
--   `stateName` **string**
+-   `stateScopeName` **string**
 -   `actionName` **string**
+
+Returns **string**
+
+### _static_ static getResetEventName
+**Parameters**
+-   `stateScopeName` **string**
 
 Returns **string**
 
