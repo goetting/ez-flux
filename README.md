@@ -19,6 +19,7 @@ Only user actions, transparent events and one enumberable state.
     -   [Getting Started](#getting-started)
     -   [Async Actions](#async-actions)
     -   [Middleware](#middleware)
+    -   [History Recroding](#history-recroding)
 -   [More EZ Libraries](#more-ez-libraries)
 -   [API Documentation](#api-documentation)
     -   [EventEmitter3](#eventemitter3)
@@ -164,7 +165,37 @@ const ezFlux = new EZFlux({
   },
 });
 ```
+### History Recroding
 
+EZFlux will record history if history.recrod was set _true_ in the config or on construction.
+This allows you to exactly deduct what is manipulating your state and when.
+Please note, however, that deepClone will be called on the state on every change.
+So, while useful for debugging, this will have seriously negative implications regarding performance.
+Further more you may also out the history to console, should you have a logging method enabled.
+
+```JS
+import EZFlux from 'ez-flux';
+import scopeConfig from './scope-config';
+
+const options = {
+  console: 'trace',
+  history: {
+    record: true,
+    log: true,
+  },
+};
+
+const ezFlux = new EZFlux(scopeConfig, options);
+
+ezFlux.actions.weather.setRain(true);
+
+```
+The console will now trace the change event and the history object.
+
+You may also access the [history dictionary](#history) directly
+```JS
+ezFlux.history
+```
 
 # More EZ Libraries
 
