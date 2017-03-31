@@ -155,7 +155,6 @@ export default class EZFlux extends EventEmitter3 {
     const changeEventName: string = this.constructor.getChangeEventName(scopeName);
     const canceledEventName: string = this.constructor.getCanceledEventName(scopeName, actionName);
     const actionFlow: Function[] = [action];
-    let mutableStateScope = Object.seal({ ...this.state[scopeName] });
 
     Object.freeze(this.state[scopeName]);
 
@@ -163,7 +162,7 @@ export default class EZFlux extends EventEmitter3 {
     if (afterActions) actionFlow.unshift(afterActions);
 
     this.on(triggerEventName, async (id, payload): Promise<void> => {
-      const stateChange = Object.seal({ ...mutableStateScope });
+      const stateChange = Object.seal({ ...this.state[scopeName] });
       const callAndCheck = async (method: Function): Promise<boolean> => {
         const actionResult = await method(payload, stateChange, this, actionName);
         const isValidResult = actionResult && typeof actionResult === 'object';
@@ -178,7 +177,6 @@ export default class EZFlux extends EventEmitter3 {
       }
       if (success) {
         this.state = { ...this.state, ...{ [scopeName]: { ...stateChange } } };
-        mutableStateScope = Object.seal(stateChange);
         Object.freeze(this.state);
         Object.freeze(this.state[scopeName]);
         this.emitOrBuffer(changeEventName, id);

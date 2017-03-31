@@ -1,12 +1,13 @@
 {
   "name": "ez-flux",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "an easy to use flux implementation",
   "main": "./lib/index.js",
   "scripts": {
     "start": "bash start.sh",
     "build": "babel src --out-dir lib",
     "lint:fix": "eslint --color --fix --ext .js ./src",
+    "test": "NODE_ENV=test jest",
     "test:coverage": "NODE_ENV=test jest --coverage"
   },
   "repository": {
