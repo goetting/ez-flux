@@ -16,9 +16,16 @@ describe('EZFlux', () => {
     it('should create an action trigger for each action passed in the constructor', actionCreate);
   });
 
+  describe('state', () => {
+    it('should be frozen', frozenState);
+    it('should have frozen first dimension', frozenStateFirstDim);
+    it('should stay frozen after an action was executed', frozenAfterAction);
+    it('should stay frozen after reset', frozenAfterReset);
+  });
+
   describe('actions', () => {
     it('should be triggered by actionTriggers with the appropriate data passed', actionsCallable);
-    it('should have the ez bound to it', actionsBound);
+    it('should have the any ezFlux instance bound to it', actionsBound);
     it('should cancel action if setState was not an Object', actionsCancel);
     it('should fire trigger event and state change event on statechange', stateChangeEvents);
     it('should return a promise', actionReturnsPromise);
@@ -35,6 +42,10 @@ describe('EZFlux', () => {
 
   describe('resetState', () => {
     it('should restore the state to its initial value', resetState);
+  });
+
+ describe('resetStateScope', () => {
+    it('should reset the state scope to its initial value', resetStateScope);
   });
 });
 
@@ -94,22 +105,44 @@ function actionCreate() {
   });
 }
 
+function frozenState() {
+  const ez = new EZFlux(stateConfig);
+  expect(Object.isFrozen(ez.state)).toBeTruthy();
+}
+
+function frozenStateFirstDim() {
+  const ez = new EZFlux(stateConfig);
+  Object.keys(ez.state).forEach(scope => expect(Object.isFrozen(scope)).toBeTruthy());
+}
+
+async function frozenAfterAction() {
+  const ez = new EZFlux(stateConfig);
+  await ez.actions.avengers.setHulk('green');
+  Object.keys(ez.state).forEach(scope => expect(Object.isFrozen(scope)).toBeTruthy());
+}
+
+async function frozenAfterReset() {
+  const ez = new EZFlux(stateConfig);
+  await ez.actions.avengers.setHulk('green');
+  ez.resetState();
+  Object.keys(ez.state).forEach(scope => expect(Object.isFrozen(scope)).toBeTruthy());
+}
+
 async function actionsCallable() {
   const ez = new EZFlux(stateConfig);
   expect(ez.state.avengers.hulk).toEqual('normal');
-  try { await ez.actions.avengers.setHulk('green'); }
-  catch(e) { throw e; }
+  await ez.actions.avengers.setHulk('green');
   expect(ez.state.avengers.hulk).toEqual('green');
 }
 
 async function actionsBound() {
   let ez = null;
-  const datStateConfig = EZFlux.cloneDeep(stateConfig)
+  const datStateConfig = EZFlux.cloneDeep(stateConfig);
   datStateConfig.avengers.actions.datAction = function() {expect(this).toEqual(ez)};
 
   ez = new EZFlux(datStateConfig);
 
-  ez.actions.avengers.datAction();
+  await ez.actions.avengers.datAction();
 }
 
 
@@ -166,13 +199,13 @@ async function beforeAction() {
     expect(ezFlux instanceof EZFlux);
     expect(this instanceof EZFlux);
 
-    return { teddy: true };
+    return { thor: 'hammered' };
   };
-  const ez = new EZFlux(beforeActionsStateConfig, { log: {events: true} });
+  const ez = new EZFlux(beforeActionsStateConfig);
 
   await ez.actions.avengers.setHulk('green');
 
-  expect(ez.state.avengers.teddy).toEqual(true);
+  expect(ez.state.avengers.thor).toEqual('hammered');
 }
 
 async function afterAction() {
@@ -186,8 +219,7 @@ async function afterAction() {
 
     return { hulk: 'red' };
   };
-  const ez = new EZFlux(afterActionsStateConfig, { log: {events: true} });
-
+  const ez = new EZFlux(afterActionsStateConfig);
   await ez.actions.avengers.setHulk('green');
 
   expect(ez.state.avengers.hulk).toEqual('red');
@@ -214,15 +246,25 @@ function configGetter() {
 
 async function resetState() {
   const ez = new EZFlux(stateConfig);
-  const defaultState = ez.state;
+  const defaultState = EZFlux.cloneDeep(ez.state);
 
   await ez.actions.avengers.setHulk('green');
 
-  const mutatedState = ez.state;
-
-  expect(mutatedState).not.toEqual(defaultState);
+  expect(ez.state).not.toEqual(defaultState);
 
   ez.resetState();
+
+  expect(ez.state).toEqual(defaultState);
+}
+
+async function resetStateScope() {
+  const ez = new EZFlux(stateConfig);
+  const defaultState = EZFlux.cloneDeep(ez.state);
+
+  await ez.actions.avengers.setHulk('green');
+
+  expect(ez.state).not.toEqual(defaultState);
+  ez.resetStateScope('avengers');
 
   expect(ez.state).toEqual(defaultState);
 }

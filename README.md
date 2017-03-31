@@ -2,7 +2,7 @@
 
 ezFlux is a tiny, simple JavaScript state machine with [flux](https://www.youtube.com/watch?list=PLb0IAmt7-GS188xDYE-u1ShQmFFGbrk0v&time_continue=621&v=nYkdrAPrdcw)-like event flow.
 It extends its only dependency: EventEmitter3.
-Its single state can only be manipulated by actions.
+Its single, forzen state can only be manipulated by actions.
 If enabled, it generates a comprehensive timeline documenting all state changes.
 
 #### Mission Statement
@@ -24,6 +24,7 @@ Only user actions, transparent events and one enumberable state.
     -   [EventEmitter3](#eventemitter3)
     -   [constructor](#constructor)
     -   [static deepClone](#static-deepclone)
+    -   [static nextTick](#static-nexttick)
     -   [static getTriggerEventName](#static-gettriggereventname)
     -   [static getChangeEventName](#static-getchangeeventname)
     -   [static getCanceledEventName](#static-getcanceledeventname)
@@ -33,6 +34,7 @@ Only user actions, transparent events and one enumberable state.
     -   [getConfig](#getconfig)
     -   [setConfig](#setconfig)
     -   [resetState](#resetstate)
+    -   [resetStateScope](#resetstatescope)
 -   [Contributing](#contributing)
 
 # Install
@@ -83,6 +85,7 @@ ezFlux.actions.weather.setRain(true);
 ### Async Actions
 
 ezFlux also supports asynchronous behaviour. An action may be an async function, potentially acceping a promise as a return value.
+By default, all actions are asyncronous and return promises. Their code will always be executed in the next tick.
 
 ```JS
 import EZFlux from 'ez-flux';
@@ -105,7 +108,7 @@ const ezFlux = new EZFlux({
 });
 ```
 
-All actions return promises. In simple situations, this can be helpful if you wish to avoid helper values like "isLoading" on your state.
+In simple situations, this can be helpful if you wish to avoid helper values like "isLoading" on your state.
 
 ```JS
 aync function renderCityWeather(city) {
@@ -143,13 +146,13 @@ const ezFlux = new EZFlux({
         return { temperature, rain };
       },
     },
-    beforeAction: async function checkAccess() => {
+    beforeAction: async function checkAccess(payload, scopeValues) => {
       const accessGranted = await accessLayer.requestUserAuthorization();
 
-      return accessGranted ? stateValues : false;
+      return accessGranted ? scopeValues : false;
     },
-    afterAction: function projectData(payload, stateValues) {
-      const { temperature, rain } = stateValues;
+    afterAction: function projectData(payload, scopeValues) {
+      const { temperature, rain } = scopeValues;
 
       return { feels: (temperature < 20 || rain) ? 'bad' : 'good' };
     },
@@ -210,18 +213,13 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
 - `Options` **Options?**
   ```TS
     type Options = {
-      // Outs event data to console and saves it in history.
-      // default: false
-      log?: {
-        // Outs event names to console.
+      history?: {
+        // Will create a history entry on every single event. careful: will deepClone state.
         // default: false
-        events?: boolean,
-        // Outs history data to console.
+        record?: boolean,
+        // Will display history in console, if event logging was disabled.
         // default: false
-        history?: boolean,
-        // uses console.trace instead of console.log;
-        // default: false
-        trace?: boolean,
+        log?: boolean,
       }
       // In browsers buffers, event emissions to animation frame.
       // default: false
@@ -229,7 +227,10 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
       // initialState will overwrite values in StateConfig.
       // it must resemble the final ezFlux.state - however, any key is optional.
       // useful to pass states from other instances, e.g. in SSR or testing scenarios.
-      initialState?: Object
+      initialState?: Object,
+      // you may pass a console method (e.g. log or trace) if you wish to log events.
+      // default: ''
+      console?: string
     };
   ```
 
@@ -238,7 +239,11 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
 **parameters**
 -   `sourceValue` **any**
 
-Returns **any**
+### _static_ nextTick
+
+Will resolve promise after a 0-ms timeout has been resolved.
+
+Returns ***Promise<void>***
 
 ### _static_ getTriggerEventName
 **parameters**
@@ -309,7 +314,13 @@ Returns **Config**
 
 Will reset the state to the value it had after ezFlux was constructed initially.
 
+### resetStateScope
 
+**Parameters**
+
+-   `scopeName` **string**
+
+Will reset a specific state scope to the value it had after ezFlux was constructed initially.
 
 # Contributing
 

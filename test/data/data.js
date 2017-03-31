@@ -2,6 +2,14 @@ const timeout = async ms => new Promise(res => setTimeout(res, ms));
 
 export default {
   stateConfig: {
+    deadScope: {
+      values: {
+        someVals: true,
+      },
+      actions: {
+        nothing: () => 0,
+      },
+    },
     avengers: {
       values: { hulk: 'normal', ironMan: 'normal', thor: 'normal', ready: false, someArray: [] },
       actions: {
