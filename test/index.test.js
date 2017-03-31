@@ -25,7 +25,6 @@ describe('EZFlux', () => {
 
   describe('actions', () => {
     it('should be triggered by actionTriggers with the appropriate data passed', actionsCallable);
-    it('should have the any ezFlux instance bound to it', actionsBound);
     it('should cancel action if setState was not an Object', actionsCancel);
     it('should fire trigger event and state change event on statechange', stateChangeEvents);
     it('should return a promise', actionReturnsPromise);
@@ -135,17 +134,6 @@ async function actionsCallable() {
   expect(ez.state.avengers.hulk).toEqual('green');
 }
 
-async function actionsBound() {
-  let ez = null;
-  const datStateConfig = EZFlux.cloneDeep(stateConfig);
-  datStateConfig.avengers.actions.datAction = function() {expect(this).toEqual(ez)};
-
-  ez = new EZFlux(datStateConfig);
-
-  await ez.actions.avengers.datAction();
-}
-
-
 async function actionsCancel() {
   const ez = new EZFlux(stateConfig);
   const { avengers } = ez.state;
@@ -192,12 +180,11 @@ function asyncActions() {
 
 async function beforeAction() {
   const beforeActionsStateConfig = EZFlux.cloneDeep(stateConfig);
-  beforeActionsStateConfig.avengers.beforeActions = (payload, stateChange, actionName, ezFlux) => {
+  beforeActionsStateConfig.avengers.beforeActions = (payload, stateChange, ezFlux, actionName) => {
     expect(payload).toEqual('green');
     expect(stateChange).toEqual(ez.state.avengers);
     expect(actionName).toEqual('setHulk');
     expect(ezFlux instanceof EZFlux);
-    expect(this instanceof EZFlux);
 
     return { thor: 'hammered' };
   };
@@ -210,12 +197,11 @@ async function beforeAction() {
 
 async function afterAction() {
   const afterActionsStateConfig = EZFlux.cloneDeep(stateConfig);
-  afterActionsStateConfig.avengers.afterActions = (payload, stateChange, actionName, ezFlux) => {
+  afterActionsStateConfig.avengers.afterActions = (payload, stateChange, ezFlux, actionName) => {
     expect(payload).toEqual('green');
     expect(stateChange).toEqual(Object.assign({}, ez.state.avengers, { hulk: 'green' }));
     expect(actionName).toEqual('setHulk');
     expect(ezFlux instanceof EZFlux);
-    expect(this instanceof EZFlux);
 
     return { hulk: 'red' };
   };

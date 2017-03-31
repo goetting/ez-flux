@@ -226,6 +226,7 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
             payload: any,
             valuesClone: Object,
             ezFlux: typeof EZFlux,
+            actionName: string,
           ) => void | Object | Promise<Object>,
         },
         // Will be Called before any action of this scope. 
@@ -233,16 +234,16 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
         beforeActions?: (
           payload: any,
           currentValuesClone: Object,
+          ezFlux: typeof EZFlux,
           actionName: string,
-          ezFlux: typeof EZFlux
         ) => void | Object | Promise<Object>,
         // Will be Called after any action of this scope. 
         // Return rules are the same as for an action
         afterActions?: (
           payload: any,
           changedValuesClone: Object,
+          ezFlux: typeof EZFlux,
           actionName: string,
-          ezFlux: typeof EZFlux
         ) => void | Object | Promise<Object>,
       },
     };

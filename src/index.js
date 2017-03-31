@@ -137,7 +137,7 @@ export default class EZFlux extends EventEmitter3 {
 
     for (let i = actionNames.length; i--;) {
       const actionName: string = actionNames[i];
-      const action: Action = actions[actionName].bind(this);
+      const action: Action = actions[actionName];
 
       this.addActionTrigger(name, actionName);
       this.addActionTriggerListener(name, actionName, action, beforeActions, afterActions);
@@ -159,13 +159,13 @@ export default class EZFlux extends EventEmitter3 {
 
     Object.freeze(this.state[scopeName]);
 
-    if (beforeActions) actionFlow.push(beforeActions.bind(this));
-    if (afterActions) actionFlow.unshift(afterActions.bind(this));
+    if (beforeActions) actionFlow.push(beforeActions);
+    if (afterActions) actionFlow.unshift(afterActions);
 
     this.on(triggerEventName, async (id, payload): Promise<void> => {
       const stateChange = Object.seal({ ...mutableStateScope });
       const callAndCheck = async (method: Function): Promise<boolean> => {
-        const actionResult = await method(payload, stateChange, actionName, this);
+        const actionResult = await method(payload, stateChange, this, actionName);
         const isValidResult = actionResult && typeof actionResult === 'object';
 
         if (isValidResult) Object.assign(stateChange, actionResult);
