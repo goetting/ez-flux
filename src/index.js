@@ -1,25 +1,18 @@
 /* @flow */
 import EventEmitter3 from 'eventemitter3';
 
-type Action = (userData: any, state: Object) => Promise<Object> | Object;
-type Actions = { [string]: Action };
-type BeforeAction = (
-  payload: any,
-  values: Object,
+type Action = (
+  userData: any,
+  state: Object,
   ezFlux: any,
   actionName: string
-) => Object | Promise<Object>;
-type AfterAction = (
-  payload: any,
-  values: Object,
-  ezFlux: Object,
-  actionName: string
-) => Object | Promise<Object>;
+) => Promise<Object> | Object;
+type Actions = { [string]: Action };
 type ScopeConfig = {
   values: Object,
   actions: Actions,
-  beforeActions?: BeforeAction,
-  afterActions?: AfterAction,
+  beforeActions?: Action,
+  afterActions?: Action,
 };
 type StateConfig = { [name: string]: ScopeConfig };
 type ActionTriggers = { [string]: any => Promise<void> };
@@ -148,8 +141,8 @@ export default class EZFlux extends EventEmitter3 {
     scopeName: string,
     actionName: string,
     action: Action,
-    beforeActions: BeforeAction | void,
-    afterActions: AfterAction | void,
+    beforeActions: Action | void,
+    afterActions: Action | void,
   ) {
     const triggerEventName: string = this.constructor.getTriggerEventName(scopeName, actionName);
     const changeEventName: string = this.constructor.getChangeEventName(scopeName);
