@@ -135,17 +135,17 @@ async function actionsCallable() {
 }
 
 async function actionsCancel() {
-  let changeFired = false;
+  let canceled = false;
   const ez = new EZFlux(stateConfig);
   const { avengers } = ez.state;
-  const changeEventName = EZFlux.getEventNames('avengers', 'setData').change;
-  const handler = () => { changeFired = true }
+  const cancelEventName = EZFlux.getEventNames('avengers', 'setData').canceled;
+  const handler = () => { canceled = true }
 
-  ez.once(changeEventName, handler);
+  ez.once(cancelEventName, handler);
   await ez.actions.avengers.setData();
   expect(ez.state.avengers).toEqual(avengers);
-  expect(changeFired).toBeFalsy();
-  ez.removeListener(changeEventName, handler);
+  expect(canceled).toBeTruthy();
+  ez.removeListener(cancelEventName, handler);
 }
 
 function stateChangeEvents(done) {
@@ -155,7 +155,7 @@ function stateChangeEvents(done) {
   const cb = () => { oneDone ? done() : oneDone = true; };
 
   ez.once(eventNames.change, cb);
-  ez.once(eventNames.trigger, cb);
+  ez.once(eventNames.triggered, cb);
   ez.actions.avengers.setData({ hulk: 'green' });
 }
 

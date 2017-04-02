@@ -271,6 +271,7 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
 -   `sourceValue` **any**
 
 ### _static_ getEventNames
+
 **parameters**
 -   `stateScopeName` **string**
 -   `actionName` **string**
@@ -278,8 +279,8 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
 Returns **EventNames**
 ```TS
   type EventNames = {
-    trigger: string,
-    resolved: string,
+    triggered: string,
+    canceled: string,
     change: string,
     reset: string
   };
