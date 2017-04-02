@@ -1,12 +1,11 @@
 # ezFlux
 
-ezFlux is a tiny, simple JavaScript state machine with [flux](https://www.youtube.com/watch?list=PLb0IAmt7-GS188xDYE-u1ShQmFFGbrk0v&time_continue=621&v=nYkdrAPrdcw)-like event flow.
-It extends its only dependency: EventEmitter3.
-Its single, forzen state can only be manipulated by actions.
-If enabled, it generates a comprehensive timeline documenting all state changes.
+ezFlux is a simple JavaScript state machine with [flux](https://www.youtube.com/watch?list=PLb0IAmt7-GS188xDYE-u1ShQmFFGbrk0v&time_continue=621&v=nYkdrAPrdcw)-like event flow.  
+It manages a single, forzen, enumerable state, only manipulable by actions.
+Designed with http and db accesses in mind, all actions are handled asynchronously.
+It can generate a comprehensive timeline, documenting all state changes.
 
 #### Mission Statement
-
 -   **Full transparency**: Anything accessing ezFlux is able to deduct how the state is changing and why.
 -   **Performance**: With tiny file size and a high performance, this library will simply get out of your way.
 -   **Simplicity**: Focused on a select few, vital features and minimal API, ezFlux reduces boiler plate _significantly_.
@@ -25,11 +24,7 @@ Only user actions, transparent events and one enumberable state.
     -   [EventEmitter3](#eventemitter3)
     -   [constructor](#constructor)
     -   [static deepClone](#static-deepclone)
-    -   [static nextTick](#static-nexttick)
-    -   [static getTriggerEventName](#static-gettriggereventname)
-    -   [static getChangeEventName](#static-getchangeeventname)
-    -   [static getCanceledEventName](#static-getcanceledeventname)
-    -   [static getResetEventName](#static-getreseteventname)
+    -   [static getEventNames](#static-geteventnames)
     -   [history](#history)
     -   [actions](#actions)
     -   [state](#state)
@@ -41,9 +36,6 @@ Only user actions, transparent events and one enumberable state.
 
 # Install
 
-simply install through npm.
-
-
 ```sh
 $ npm install ez-flux --save
 ```
@@ -52,7 +44,7 @@ $ npm install ez-flux --save
 
 ### Getting Started
 
-EZFlux expects a dictionary of state-namespaces with values and actions.
+EZFlux expects a dictionary of state-namespaces with values and actions.  
 The returned Object of an action will be Object.assigned to the values of the state-namespace.
 
 ```JS
@@ -75,7 +67,7 @@ ezFlux will assemble the state and generate action triggers for the appropriate 
 
 ```JS
 ezFlux.state;
-// Implicit getter returns deepClone of state: { weather: { rain: false } }
+// Frozen Object: { weather: { rain: false } }
 
 ezFlux.on('change:state.weather', () => console.log(ezFlux.state.weather) );
 // Full event emitter API - subscribe to changes on the 'weather' namespace of the state
@@ -84,14 +76,14 @@ ezFlux.actions.weather.setRain(true);
 // Triggers our action. Our listener will now log: { rain: true };
 ```
 
-Please note that only primitive state values will be save guarded through Object.freeze and cloning.  
-Thus, it's strongly discouraged to use nested objects as state values.
+It's strongly discouraged to use nested objects as state values since only primitive state values will be save guarded by Object.freeze and cloning.
 
 ### Async Actions
 
-By default, all actions are executed asyncronously with their triggers returning promises.
-Their code will always be executed in the next tick.
-As a result an action may be an async function, potentially acceping a promise as a return value.
+All actions are executed asyncronously, their triggers returning promises.  
+As a result an action may be an async function, accepting a promise as a return value.
+An actions will always be be executed in the next tick.  
+
 
 ```JS
 import EZFlux from 'ez-flux';
@@ -129,9 +121,9 @@ The EZFlux instance will still emit the propper events for actions triggered and
 
 ### Middleware
 
-With any actions _beforeActions_ and _afterActions_ will be executed when given.  
-Just like actions, these methods may be async.  
-Also, they will cancel an action if no Object or Promise<Object> was returned.
+_beforeActions_ and _afterActions_ hooks can be provided to be called on action trigger. 
+Just like actions, these methods can be used asynchronously.
+A returned Object or Promise<Object> will be assigned to the values of its state scope and accessable in the following hook.
 
 ```JS
 import EZFlux from 'ez-flux';
@@ -278,37 +270,20 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
 **parameters**
 -   `sourceValue` **any**
 
-### _static_ nextTick
-
-Will resolve promise after a 0-ms timeout.
-
-Returns ***Promise<void>***
-
-### _static_ getTriggerEventName
+### _static_ getEventNames
 **parameters**
 -   `stateScopeName` **string**
 -   `actionName` **string**
 
-Returns **string**
-
-### _static_ getChangeEventName
-**parameters**
--   `stateScopeName` **string**
-
-Returns **string**
-
-### _static_ static getCanceledEventName
-**Parameters**
--   `stateScopeName` **string**
--   `actionName` **string**
-
-Returns **string**
-
-### _static_ static getResetEventName
-**Parameters**
--   `stateScopeName` **string**
-
-Returns **string**
+Returns **EventNames**
+```TS
+  type EventNames = {
+    trigger: string,
+    resolved: string,
+    change: string,
+    reset: string
+  };
+```
 
 ### history
 
