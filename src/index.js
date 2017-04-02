@@ -28,7 +28,7 @@ type EventBuffer = { [eventName: string]: TriggerResolver[] };
 type HistoryEntry = { time: number, name: string, state: Object, payload?: any };
 type History = { [time: number]: HistoryEntry };
 
-const nextTick = (cb: Function): Promise<void> => new Promise(res => setTimeout(cb(res), 0));
+const nextTick = (cb: Function): Promise<void> => new Promise(res => setTimeout(() => cb(res), 0));
 const colorMap: Object = { RESET: 'red', trigger: 'cyan', change: 'green' };
 
 export default class EZFlux extends EventEmitter3 {
