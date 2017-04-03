@@ -19,7 +19,7 @@ type TriggerResolver = () => void;
 type StateConfig = { [name: string]: ScopeConfig };
 type ActionTrigger = (payload: any) => Promise<void>;
 type ActionTriggers = { [string]: ActionTrigger };
-type ActionListener = (payload: any, TriggerResolver) => Promise<void>;
+type ActionListener = (payload: any, TriggerResolver) => void;
 type HistoryCFG = { record?: boolean, log?: boolean };
 type consoleCFG = 'log' | 'trace' | 'error' | 'info';
 type Config = { console?: consoleCFG, throttleUpdates?: boolean, history: HistoryCFG };
@@ -142,6 +142,7 @@ export default class EZFlux extends EventEmitter3 {
     }
   }
 
+/*
   getActionListener(
     scopeName: string,
     actionName: string,
@@ -173,6 +174,48 @@ export default class EZFlux extends EventEmitter3 {
       }
     };
   }
+*/
+
+  getActionListener(
+    scopeName: string,
+    actionName: string,
+    actionCycle: Action[],
+    eventNames: EventNames,
+  ): ActionListener {
+    return (payload, res): void => {
+      const stateChange = Object.seal({ ...this.state[scopeName] });
+      const runSeries = (actions, cb) => {
+        const result = actions[0](payload, stateChange, this, actionName);
+        const validateActionResult = (actionResult) => {
+          if (!actionResult || typeof actionResult !== 'object') {
+            cb(false);
+            return;
+          }
+          Object.assign(stateChange, actionResult);
+          actions.shift();
+
+          if (actions.length) runSeries(actions, cb);
+          else cb(true);
+        };
+
+        if (!result || !result.then) validateActionResult(result);
+        else result.then(validateActionResult);
+      };
+
+      runSeries(actionCycle.reverse(), (success) => {
+        if (success) {
+          this.state = { ...this.state };
+          this.state[scopeName] = { ...stateChange };
+          Object.freeze(this.state);
+          Object.freeze(this.state[scopeName]);
+          this.emitOrBuffer(eventNames.change, null, res);
+        } else {
+          this.emitOrBuffer(eventNames.canceled, null, res);
+        }
+      });
+    };
+  }
+
 
   /*                                   Event Handling                                    */
 
