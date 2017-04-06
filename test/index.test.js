@@ -226,6 +226,7 @@ function asyncActions() {
       expect(ms > 50).toBeTruthy();
     })
     .catch(e => {
+      console.error(e);
       clearInterval(interval);
       expect(true).toBeFalsy();
     });

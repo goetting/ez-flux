@@ -125,18 +125,19 @@ export default class EZFlux extends EventEmitter3 {
     eventNames: EventNames,
   ): ActionListener {
     return (payload, res): void => {
+      let i = actionCycle.length - 1;
       const stateChange = Object.seal({ ...this.state[scopeName] });
       const runSeries = (actions, cb) => {
-        const result = actions[0](payload, stateChange, this, actionName);
+        const result = actions[i](payload, stateChange, this, actionName);
         const validateActionResult = (actionResult) => {
           if (!actionResult || typeof actionResult !== 'object') {
             cb(false);
             return;
           }
           Object.assign(stateChange, actionResult);
-          actions.shift();
+          i -= 1;
 
-          if (actions.length) runSeries(actions, cb);
+          if (actions[i]) runSeries(actions, cb);
           else cb(true);
         };
 
@@ -144,7 +145,7 @@ export default class EZFlux extends EventEmitter3 {
         else result.then(validateActionResult);
       };
 
-      runSeries(actionCycle.reverse(), (success) => {
+      runSeries(actionCycle, (success) => {
         if (success) {
           this.state = { ...this.state };
           this.state[scopeName] = { ...stateChange };
