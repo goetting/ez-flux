@@ -1,5 +1,4 @@
 import EZFlux from '../src/index.js';
-import testData from './data/data.js';
 
 describe('EZFlux', () => {
   it('should spawn without blowing up', ezFluxShouldSpawn);
@@ -48,7 +47,58 @@ describe('EZFlux', () => {
   });
 });
 
-const { stateConfig } = testData;
+const timeout = async ms => new Promise(res => setTimeout(res, ms));
+const getTestData = () => ({
+  stateConfig: {
+    deadScope: {
+      values: {
+        someVals: true,
+      },
+      actions: {
+        nothing: () => 0,
+      },
+    },
+    avengers: {
+      values: { hulk: 'normal', ironMan: 'normal', thor: 'normal', ready: false, someArray: [] },
+      actions: {
+        setAvengersReady: async () => {
+          await timeout(100);
+          return { hulk: 'green', ironMan: 'suited up', thor: 'hammered', ready: true }
+        },
+        setHulk(data, values) {
+          return { hulk: data, ready: values.ready && data.hulk === 'green' };
+        },
+        setData: (data, values) => data,
+      },
+    },
+  },
+});
+const cloneDeep = (val) => {
+  if (!val || typeof val !== 'object') return val;
+  if (val instanceof Array) {
+    const arrClone = [];
+
+    for (let i = val.length; i--;) {
+      arrClone[i] = cloneDeep(val[i]);
+    }
+    return arrClone;
+  }
+  const objClone = {};
+  const keys = Object.keys(val);
+
+  for (let i = keys.length; i--;) {
+    const key = keys[i];
+
+    if (Object.prototype.hasOwnProperty.call(val, key)) {
+      objClone[key] = cloneDeep(val[key]);
+    }
+  }
+  return objClone;
+}
+
+
+
+const { stateConfig } = getTestData();
 
 function ezFluxShouldSpawn() {
   expect(new EZFlux()).toBeTruthy();
@@ -165,7 +215,7 @@ function actionReturnsPromise() {
 }
 
 function asyncActions() {
-  const ez = new EZFlux(stateConfig);
+  const ez = new EZFlux(getTestData().stateConfig);
   let ms = 0;
   const interval = setInterval(() => { ms++ }, 1);
   expect(ez.state.avengers.ready).toEqual(false);
@@ -182,7 +232,7 @@ function asyncActions() {
 }
 
 async function beforeAction() {
-  const beforeActionsStateConfig = EZFlux.cloneDeep(stateConfig);
+  const beforeActionsStateConfig = getTestData().stateConfig;
   beforeActionsStateConfig.avengers.beforeActions = (payload, stateChange, ezFlux, actionName) => {
     expect(payload).toEqual('green');
     expect(stateChange).toEqual(ez.state.avengers);
@@ -199,7 +249,7 @@ async function beforeAction() {
 }
 
 async function afterAction() {
-  const afterActionsStateConfig = EZFlux.cloneDeep(stateConfig);
+  const afterActionsStateConfig = getTestData().stateConfig;
   afterActionsStateConfig.avengers.afterActions = (payload, stateChange, ezFlux, actionName) => {
     expect(payload).toEqual('green');
     expect(stateChange).toEqual(Object.assign({}, ez.state.avengers, { hulk: 'green' }));
@@ -235,7 +285,7 @@ function configGetter() {
 
 async function resetState() {
   const ez = new EZFlux(stateConfig);
-  const defaultState = EZFlux.cloneDeep(ez.state);
+  const defaultState = cloneDeep(ez.state);
 
   await ez.actions.avengers.setHulk('green');
 
@@ -248,7 +298,7 @@ async function resetState() {
 
 async function resetStateScope() {
   const ez = new EZFlux(stateConfig);
-  const defaultState = EZFlux.cloneDeep(ez.state);
+  const defaultState = cloneDeep(ez.state);
 
   await ez.actions.avengers.setHulk('green');
 

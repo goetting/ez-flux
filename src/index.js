@@ -28,32 +28,9 @@ type EventBuffer = { [eventName: string]: TriggerResolver[] };
 type HistoryEntry = { time: number, name: string, state: Object, payload?: any };
 type History = { [time: number]: HistoryEntry };
 
-const nextTick = (cb: Function): Promise<void> => new Promise(res => setTimeout(() => cb(res), 0));
 const colorMap: Object = { RESET: 'red', trigger: 'cyan', change: 'green' };
 
 export default class EZFlux extends EventEmitter3 {
-  static cloneDeep(val: any): any {
-    if (!val || typeof val !== 'object') return val;
-    if (val instanceof Array) {
-      const arrClone: any[] = [];
-
-      for (let i = val.length; i--;) {
-        arrClone[i] = this.cloneDeep(val[i]);
-      }
-      return arrClone;
-    }
-    const objClone: Object = {};
-    const keys = Object.keys(val);
-
-    for (let i = keys.length; i--;) {
-      const key = keys[i];
-
-      if (Object.prototype.hasOwnProperty.call(val, key)) {
-        objClone[key] = this.cloneDeep(val[key]);
-      }
-    }
-    return objClone;
-  }
   static getEventNames(stateName: string, actionName: string = ''): EventNames {
     return {
       triggered: `triggered:action.${stateName}.${actionName}`,
@@ -94,7 +71,7 @@ export default class EZFlux extends EventEmitter3 {
   actions: { [string]: ActionTriggers } = {};
   eventBuffer: EventBuffer = {};
   emissionTimeout: any = null;
-  defaultState: Object;
+  defaultState: Object = {};
   state: Object = {};
 
   constructor(stateCfg: StateConfig = {}, options: Options = { history: {} }) {
@@ -106,18 +83,17 @@ export default class EZFlux extends EventEmitter3 {
 
     for (let i = scopeNames.length; i--;) {
       const name = scopeNames[i];
-      const scopeConfig: ScopeConfig = this.constructor.cloneDeep(stateCfg[name]);
+      const scopeConfig: ScopeConfig = stateCfg[name];
 
       this.constructor.validateScope(name, scopeConfig);
 
-      this.state[name] = scopeConfig.values;
+      this.state[name] = { ...scopeConfig.values };
+      this.defaultState[name] = { ...scopeConfig.values };
       if (initState[name]) Object.assign(this.state[name], initState[name]);
       Object.freeze(this.state[name]);
 
       this.addScopeToEventSystem(name, scopeConfig);
     }
-
-    this.defaultState = this.constructor.cloneDeep(this.state);
     Object.freeze(this.state);
   }
 
@@ -135,46 +111,12 @@ export default class EZFlux extends EventEmitter3 {
       const action = actions[actionName];
       const actionCycle = this.constructor.getActionCycle(action, beforeActions, afterActions);
       const listener = this.getActionListener(scopeName, actionName, actionCycle, eventNames);
-      const trigger = payload => nextTick(res => this.emit(eventNames.triggered, payload, res));
+      const trigger = payload => new Promise(res => this.emit(eventNames.triggered, payload, res));      // eslint-disable-line no-loop-func
 
       this.actions[scopeName][actionName] = trigger;
       this.on(eventNames.triggered, listener);
     }
   }
-
-/*
-  getActionListener(
-    scopeName: string,
-    actionName: string,
-    actionCycle: Action[],
-    eventNames: EventNames,
-  ): ActionListener {
-    return async (payload, res): Promise<void> => {
-      const stateChange = Object.seal({ ...this.state[scopeName] });
-      const callAndCheck = async (method: Function): Promise<boolean> => {
-        const actionResult = await method(payload, stateChange, this, actionName);
-        const isValidResult = actionResult && typeof actionResult === 'object';
-
-        if (isValidResult) Object.assign(stateChange, actionResult);
-        return isValidResult;
-      };
-      let success = true;
-
-      for (let i = actionCycle.length; i-- && success;) {
-        success = await callAndCheck(actionCycle[i]);
-      }
-      if (success) {
-        this.state = { ...this.state };
-        this.state[scopeName] = { ...stateChange };
-        Object.freeze(this.state);
-        Object.freeze(this.state[scopeName]);
-        this.emitOrBuffer(eventNames.change, null, res);
-      } else {
-        this.emitOrBuffer(eventNames.canceled, null, res);
-      }
-    };
-  }
-*/
 
   getActionListener(
     scopeName: string,
@@ -216,7 +158,6 @@ export default class EZFlux extends EventEmitter3 {
     };
   }
 
-
   /*                                   Event Handling                                    */
 
   emitOrBuffer(eventName: string, payload: any, triggerResolver?: TriggerResolver): void {
@@ -252,7 +193,11 @@ export default class EZFlux extends EventEmitter3 {
     const log = this.runsInBrowser ? [`%c${msg}`, `color:${color}`] : [msg];
 
     if (this.cfg.history.record) {
-      this.history[time] = { time, name, state: this.constructor.cloneDeep(this.state) };
+      const copy = {};
+      const scopes = Object.keys(this.state);
+
+      for (let i = scopes.length; i--;) copy[scopes[i]] = { ...this.state[scopes[i]] };
+      this.history[time] = { time, name, state: copy };
       if (payload) this.history[time].payload = payload;
       if (this.cfg.history.log) log.push(this.history[time]);
     }
@@ -279,7 +224,7 @@ export default class EZFlux extends EventEmitter3 {
 
     this.state = {
       ...this.state,
-      ...{ [name]: this.constructor.cloneDeep(this.defaultState[name]) },
+      ...{ [name]: { ...this.defaultState[name] } },
     };
     Object.freeze(this.state[name]);
     this.emit(this.constructor.getEventNames(name).reset);

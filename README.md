@@ -23,7 +23,6 @@ Only user actions, transparent events and one enumberable state.
 -   [API Documentation](#api-documentation)
     -   [EventEmitter3](#eventemitter3)
     -   [constructor](#constructor)
-    -   [static deepClone](#static-deepclone)
     -   [static getEventNames](#static-geteventnames)
     -   [history](#history)
     -   [actions](#actions)
@@ -161,8 +160,7 @@ const ezFlux = new EZFlux({
 
 EZFlux will record history if history.recrod was set _true_ in the config or on construction.
 This allows you to exactly deduct what is manipulating your state and when.
-Please note, however, that deepClone will be called on the state on every change.
-So, while useful for debugging, this will have seriously negative implications regarding performance.
+Please note, however, that the state scopes will only be shallow cloned. nested changes will not be documented.  
 Further more you may also out the history to console, should you have a logging method enabled.
 
 ```JS
@@ -245,7 +243,7 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
   ```TS
     type Options = {
       history?: {
-        // Will create a history entry on every single event. careful: will deepClone state.
+        // Will create a history entry on every single event
         // default: false
         record?: boolean,
         // Will display history in console, if event logging was disabled.
@@ -264,12 +262,6 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
       console?: string
     };
   ```
-
-### _static_ deepClone
-
-**parameters**
--   `sourceValue` **any**
-
 ### _static_ getEventNames
 
 **parameters**
@@ -316,8 +308,7 @@ Please note that an action may be called with only one arguement.
 
 ### state
 
-Will be generated based on the stateConfig given to the constructor.
-Implicit getter, calling EZFlux.deepClone on the internal state.
+An object, forzen up to its second dimension.
 
 Type: Object
 
