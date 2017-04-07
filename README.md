@@ -258,6 +258,17 @@ If you wish to use ezFlux with [React](https://facebook.github.io/react/), [Infe
 
 Returns **EventNames**
 
+```TS
+  type EventNames = {
+    triggered: string,
+    canceled: string,
+    change: string,
+    reset: string
+  };
+```
+
+
+
 ### on
 
 Listens to an event.
@@ -291,15 +302,6 @@ Emits an event, calling all handlers listening to it with _payload_ .
 **parameters**
 -   `eventName` **string**
 -   `payload` **any**
-
-```TS
-  type EventNames = {
-    triggered: string,
-    canceled: string,
-    change: string,
-    reset: string
-  };
-```
 
 ### history
 
