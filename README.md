@@ -27,8 +27,6 @@ Only user actions, transparent events and one enumberable state.
     -   [history](#history)
     -   [actions](#actions)
     -   [state](#state)
-    -   [getConfig](#getconfig)
-    -   [setConfig](#setconfig)
     -   [resetState](#resetstate)
     -   [resetStateScope](#resetstatescope)
 -   [Contributing](#contributing)
@@ -158,10 +156,9 @@ const ezFlux = new EZFlux({
 ```
 ### History Recroding
 
-EZFlux will record history if history.recrod was set _true_ in the config or on construction.
+Passing recordHistory _true_ with options on constrcution will enable history recording.  
 This allows you to exactly deduct what is manipulating your state and when.
-Please note, however, that the state scopes will only be shallow cloned. nested changes will not be documented.  
-Further more you may also out the history to console, should you have a logging method enabled.
+Please note, however, that the state scopes will only be shallow cloned. Thus, nested changes will not be documented.  
 
 ```JS
 import EZFlux from 'ez-flux';
@@ -180,9 +177,9 @@ const ezFlux = new EZFlux(scopeConfig, options);
 ezFlux.actions.weather.setRain(true);
 
 ```
-The console will now trace the change event and the history object.
 
-You may also access the [history dictionary](#history) directly
+Now, [ezFlux.history](#history) will be accessable und continuously populated.
+
 ```JS
 ezFlux.history
 ```
@@ -242,17 +239,9 @@ By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux co
 - `Options` **Options?**
   ```TS
     type Options = {
-      history?: {
-        // Will create a history entry on every single event
-        // default: false
-        record?: boolean,
-        // Will display history in console, if event logging was disabled.
-        // default: false
-        log?: boolean,
-      }
-      // In browsers buffers, event emissions to animation frame.
+      // Will create a history entry on every single event
       // default: false
-      throttleUpdates?: boolean,
+      recordHistory?: boolean
       // initialState will overwrite values in StateConfig.
       // it must resemble the final ezFlux.state - however, any key is optional.
       // useful to pass states from other instances, e.g. in SSR or testing scenarios.
@@ -280,7 +269,7 @@ Returns **EventNames**
 
 ### history
 
-When config.debug is true, history will save state and event data on emission.
+If options.recordHistory was passed _true_, State and event data will be recorded on event emission.
 
 ```TS
   type HistoryEntry = {
@@ -311,16 +300,6 @@ Please note that an action may be called with only one arguement.
 An object, forzen up to its second dimension.
 
 Type: Object
-
-### getConfig
-
-Returns **Config**
-
-### setConfig
-
-**Parameters**
-
--   `config` **Config**
 
 ### resetState
 

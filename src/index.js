@@ -20,12 +20,9 @@ type StateConfig = { [name: string]: ScopeConfig };
 type ActionTrigger = (payload: any) => Promise<void>;
 type ActionTriggers = { [string]: ActionTrigger };
 type ActionListener = (payload: any, TriggerResolver) => void;
-type HistoryCFG = { record?: boolean, log?: boolean };
 type consoleCFG = 'log' | 'trace' | 'error' | 'info';
-type Config = { console?: consoleCFG, throttleUpdates?: boolean, history: HistoryCFG };
-type Options = Config & { initialState?: Object };
-type EventBuffer = { [eventName: string]: TriggerResolver[] };
-type HistoryEntry = { time: number, name: string, state: Object, payload?: any };
+type Config = { console?: consoleCFG, recordHistory?: boolean, initialState?: Object };
+type HistoryEntry = { time: number, name: string, state: Object, payload: any };
 type History = { [time: number]: HistoryEntry };
 
 const colorMap: Object = { RESET: 'red', trigger: 'cyan', change: 'green' };
@@ -52,34 +49,33 @@ export default class EZFlux extends EventEmitter3 {
     { values, actions, afterActions, beforeActions }: ScopeConfig,
   ): void {
     if (!values || typeof values !== 'object') {
-      throw new Error(`ezFlux: "${name}" must include a values object`);
+      throw new Error(`ezFlux: "${name}" - must include a values object`);
     }
     if (!actions || Object.keys(actions).find(key => typeof actions[key] !== 'function')) {
-      throw new Error(`ezFlux: "${name}" actions must include dictionary of functions`);
+      throw new Error(`ezFlux: "${name}" - actions must include dictionary of functions`);
     }
     if (afterActions && typeof afterActions !== 'function') {
-      throw new Error(`ezFlux: "${name}" 'afterActions' must be a function or undefined`);
+      throw new Error(`ezFlux: "${name}" - 'afterActions' must be a function or undefined`);
     }
     if (beforeActions && typeof beforeActions !== 'function') {
-      throw new Error(`ezFlux: "${name}" 'beforeActions' must be a function or undefined`);
+      throw new Error(`ezFlux: "${name}" - 'beforeActions' must be a function or undefined`);
     }
   }
 
   history: History = {};
-  cfg: Config = { throttleUpdates: false, history: { log: false, record: false } };
+  config: Config = {};
   runsInBrowser: boolean = typeof window !== 'undefined' && !!window.requestAnimationFrame;
   actions: { [string]: ActionTriggers } = {};
-  eventBuffer: EventBuffer = {};
   emissionTimeout: any = null;
   defaultState: Object = {};
   state: Object = {};
 
-  constructor(stateCfg: StateConfig = {}, options: Options = { history: {} }) {
+  constructor(stateCfg: StateConfig = {}, options: Config = {}) {
     super();
     const scopeNames = Object.keys(stateCfg);
     const initState = options.initialState || {};
 
-    this.setConfig(options);
+    this.config = options;
 
     for (let i = scopeNames.length; i--;) {
       const name = scopeNames[i];
@@ -96,8 +92,6 @@ export default class EZFlux extends EventEmitter3 {
     }
     Object.freeze(this.state);
   }
-
-  /*                                   Event Setup                                    */
 
   addScopeToEventSystem(scopeName: string, scopeConfig: ScopeConfig): void {
     const actionNames = Object.keys(scopeConfig.actions);
@@ -136,7 +130,6 @@ export default class EZFlux extends EventEmitter3 {
           }
           Object.assign(stateChange, actionResult);
           i -= 1;
-
           if (actions[i]) runSeries(actions, cb);
           else cb(true);
         };
@@ -151,74 +144,36 @@ export default class EZFlux extends EventEmitter3 {
           this.state[scopeName] = { ...stateChange };
           Object.freeze(this.state);
           Object.freeze(this.state[scopeName]);
-          this.emitOrBuffer(eventNames.change, null, res);
+          this.emit(eventNames.change);
         } else {
-          this.emitOrBuffer(eventNames.canceled, null, res);
+          this.emit(eventNames.canceled);
         }
+        res();
       });
     };
   }
 
-  /*                                   Event Handling                                    */
-
-  emitOrBuffer(eventName: string, payload: any, triggerResolver?: TriggerResolver): void {
-    if (!this.runsInBrowser || !this.cfg.throttleUpdates) {
-      this.emit(eventName);
-      if (triggerResolver) triggerResolver();
-      return;
-    }
-    if (!this.eventBuffer[eventName]) this.eventBuffer[eventName] = [];
-    if (triggerResolver) this.eventBuffer[eventName].push(triggerResolver);
-
-    window.cancelAnimationFrame(this.emissionTimeout);
-
-    this.emissionTimeout = window.requestAnimationFrame(() => {
-      const names = Object.keys(this.eventBuffer);
-
-      for (let i = names.length; i--;) {
-        this.eventBuffer[names[i]].forEach(res => res());
-        this.emit(names[i]);
-        delete this.eventBuffer[names[i]];
-      }
-    });
-  }
-
   emit(name: string = '', payload?: any, triggerResolver?: TriggerResolver): void {
     super.emit(name, payload, triggerResolver);
-    if (!this.cfg.console || !console[this.cfg.console]) return;                                      // eslint-disable-line no-console
 
-    const logger = console[this.cfg.console];                                                         // eslint-disable-line no-console
-    const time: number = Date.now();
-    const msg: string = `ezFlux | ${name}`;
-    const color: string = colorMap[name.split(':')[0]] || 'gray';
-    const log = this.runsInBrowser ? [`%c${msg}`, `color:${color}`] : [msg];
-
-    if (this.cfg.history.record) {
-      const copy = {};
+    if (this.config.recordHistory) {
+      const time: number = Date.now();
+      const state = {};
       const scopes = Object.keys(this.state);
 
-      for (let i = scopes.length; i--;) copy[scopes[i]] = { ...this.state[scopes[i]] };
-      this.history[time] = { time, name, state: copy };
-      if (payload) this.history[time].payload = payload;
-      if (this.cfg.history.log) log.push(this.history[time]);
+      for (let i = scopes.length; i--;) state[scopes[i]] = { ...this.state[scopes[i]] };
+
+      this.history[time] = { time, name, state, payload };
     }
 
-    logger(...log);
+    if (this.config.console && console[this.config.console]) {                                      // eslint-disable-line no-console
+      const logger = console[this.config.console];                                                    // eslint-disable-line no-console
+      const msg: string = `ezFlux | ${name}`;
+      const color: string = colorMap[name.split(':')[0]] || 'gray';
+      const log = this.runsInBrowser ? [`%c${msg}`, `color:${color}`] : [msg];
+      logger(...log);
+    }
   }
-
-  /*                                   Config                                    */
-
-  getConfig(): Config {
-    return Object.assign({}, this.cfg);
-  }
-
-  setConfig(cfg: Config): void {
-    if (typeof cfg.throttleUpdates === 'boolean') this.cfg.throttleUpdates = cfg.throttleUpdates;
-    if (typeof cfg.console === 'string') this.cfg.console = cfg.console;
-    if (typeof cfg.history === 'object') Object.assign(this.cfg.history, cfg.history);
-  }
-
-  /*                                   reset                                    */
 
   resetStateScope(name: string): void {
     if (!this.defaultState[name]) throw new Error(`ezFlux.reset: ${name} not found on state`);

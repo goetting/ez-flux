@@ -33,9 +33,7 @@ describe('EZFlux', () => {
   });
 
   describe('config', () => {
-    it('should set config values through setter', configSetter);
     it('should set config values while constructing', configConstruction);
-    it('should get config values', configGetter);
   });
 
   describe('resetState', () => {
@@ -265,23 +263,10 @@ async function afterAction() {
   expect(ez.state.avengers.hulk).toEqual('red');
 }
 
-
-function configSetter() {
-  const ez = new EZFlux(stateConfig);
-  expect(ez.cfg.throttleUpdates).toEqual(false);
-  ez.setConfig({ throttleUpdates: true });
-  expect(ez.cfg.throttleUpdates).toEqual(true);
-}
-
 function configConstruction() {
-  const ez = new EZFlux(stateConfig, { throttleUpdates: true });
+  const ez = new EZFlux(stateConfig, { recordHistory: true });
 
-  expect(ez.cfg.throttleUpdates).toEqual(true);
-}
-
-function configGetter() {
-  const ez = new EZFlux(stateConfig);
-  expect(ez.getConfig()).toEqual(ez.cfg);
+  expect(ez.config.recordHistory).toEqual(true);
 }
 
 async function resetState() {
