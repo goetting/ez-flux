@@ -1,6 +1,4 @@
 /* @flow */
-import EventEmitter3 from 'eventemitter3';
-
 type EventNames = { triggered: string, change: string, canceled: string, reset: string };
 type Action = (
   userData: any,
@@ -27,7 +25,36 @@ type History = { [time: number]: HistoryEntry };
 
 const colorMap: Object = { RESET: 'red', trigger: 'cyan', change: 'green' };
 
-export default class EZFlux extends EventEmitter3 {
+export class TinyEmitter {
+  events: { [string]: Function[] } = {};
+  removeListener = this.off;
+
+  emit(name: string, ...args: any[]) {
+    if (!this.events[name]) return;
+    for (let i = this.events[name].length; i--;) this.events[name][i](...args);
+  }
+
+  on(name: string, fn: Function) {
+    if (!this.events[name]) this.events[name] = [fn];
+    else this.events[name].push(fn);
+  }
+
+  once(name: string, fn: Function) {
+    this.on(name, (...args: any[]) => {
+      fn(...args);
+      this.off(name, fn);
+    });
+  }
+
+  off(name: string, fn: Function) {
+    if (!this.events[name]) return;
+    const i = this.events[name].findIndex(fn);
+
+    if (i > -1) this.events[name].splice(i, 1);
+  }
+}
+
+export default class EZFlux extends TinyEmitter {
   static getEventNames(stateName: string, actionName: string = ''): EventNames {
     return {
       triggered: `triggered:action.${stateName}.${actionName}`,
