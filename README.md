@@ -21,7 +21,6 @@ Only user actions, transparent events and one enumberable state.
     -   [History Recroding](#history-recroding)
 -   [More EZ Libraries](#more-ez-libraries)
 -   [API Documentation](#api-documentation)
-    -   [EventEmitter3](#eventemitter3)
     -   [constructor](#constructor)
     -   [static getEventNames](#static-geteventnames)
     -   [history](#history)
@@ -67,7 +66,7 @@ ezFlux.state;
 // Frozen Object: { weather: { rain: false } }
 
 ezFlux.on('change:state.weather', () => console.log(ezFlux.state.weather) );
-// Full event emitter API - subscribe to changes on the 'weather' namespace of the state
+// subscribe to changes on the 'weather' namespace of the state
 
 ezFlux.actions.weather.setRain(true);
 // Triggers our action. Our listener will now log: { rain: true };
@@ -190,10 +189,6 @@ If you wish to use ezFlux with [React](https://facebook.github.io/react/), [Infe
 - [ez-react](https://github.com/goetting/ez-react)
 
 # API Documentation
-
-### EventEmitter3
-
-By extending [EventEmitter3](https://github.com/primus/eventemitter3), ezFlux contains the complete [EventEmitter API](https://nodejs.org/api/events.html).
 
 ### constructor
 

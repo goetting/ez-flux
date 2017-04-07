@@ -25,36 +25,7 @@ type History = { [time: number]: HistoryEntry };
 
 const colorMap: Object = { RESET: 'red', trigger: 'cyan', change: 'green' };
 
-export class TinyEmitter {
-  events: { [string]: Function[] } = {};
-  removeListener = this.off;
-
-  emit(name: string, ...args: any[]) {
-    if (!this.events[name]) return;
-    for (let i = this.events[name].length; i--;) this.events[name][i](...args);
-  }
-
-  on(name: string, fn: Function) {
-    if (!this.events[name]) this.events[name] = [fn];
-    else this.events[name].push(fn);
-  }
-
-  once(name: string, fn: Function) {
-    this.on(name, (...args: any[]) => {
-      fn(...args);
-      this.off(name, fn);
-    });
-  }
-
-  off(name: string, fn: Function) {
-    if (!this.events[name]) return;
-    const i = this.events[name].findIndex(fn);
-
-    if (i > -1) this.events[name].splice(i, 1);
-  }
-}
-
-export default class EZFlux extends TinyEmitter {
+export default class EZFlux {
   static getEventNames(stateName: string, actionName: string = ''): EventNames {
     return {
       triggered: `triggered:action.${stateName}.${actionName}`,
@@ -96,9 +67,10 @@ export default class EZFlux extends TinyEmitter {
   emissionTimeout: any = null;
   defaultState: Object = {};
   state: Object = {};
+  events: { [string]: Function[] } = {};
+  removeListener = this.off;
 
   constructor(stateCfg: StateConfig = {}, options: Config = {}) {
-    super();
     const scopeNames = Object.keys(stateCfg);
     const initState = options.initialState || {};
 
@@ -180,9 +152,7 @@ export default class EZFlux extends TinyEmitter {
     };
   }
 
-  emit(name: string = '', payload?: any, triggerResolver?: TriggerResolver): void {
-    super.emit(name, payload, triggerResolver);
-
+  logEmission(name: string = '', payload?: any): void {
     if (this.config.recordHistory) {
       const time: number = Date.now();
       const state = {};
@@ -197,9 +167,33 @@ export default class EZFlux extends TinyEmitter {
       const logger = console[this.config.console];                                                    // eslint-disable-line no-console
       const msg: string = `ezFlux | ${name}`;
       const color: string = colorMap[name.split(':')[0]] || 'gray';
-      const log = this.runsInBrowser ? [`%c${msg}`, `color:${color}`] : [msg];
-      logger(...log);
+      logger(...(this.runsInBrowser ? [`%c${msg}`, `color:${color}`] : [msg]));
     }
+  }
+
+  emit(name: string = '', payload?: any, resolver?: TriggerResolver) {
+    this.logEmission(name, payload);
+    if (!this.events[name]) return;
+    for (let i = this.events[name].length; i--;) this.events[name][i](payload, resolver);
+  }
+
+  on(name: string, fn: Function) {
+    if (!this.events[name]) this.events[name] = [fn];
+    else this.events[name].push(fn);
+  }
+
+  once(name: string, fn: Function) {
+    this.on(name, (...args: any[]) => {
+      fn(...args);
+      this.off(name, fn);
+    });
+  }
+
+  off(name: string, fn: Function) {
+    if (!this.events[name]) return;
+    const i = this.events[name].findIndex(handler => handler === fn);
+
+    if (i > -1) this.events[name].splice(i, 1);
   }
 
   resetStateScope(name: string): void {
