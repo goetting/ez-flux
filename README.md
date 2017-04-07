@@ -23,6 +23,10 @@ Only user actions, transparent events and one enumberable state.
 -   [API Documentation](#api-documentation)
     -   [constructor](#constructor)
     -   [static getEventNames](#static-geteventnames)
+    -   [on](#on)
+    -   [off](#off)
+    -   [once](#once)
+    -   [emit](#emit)
     -   [history](#history)
     -   [actions](#actions)
     -   [state](#state)
@@ -253,6 +257,41 @@ If you wish to use ezFlux with [React](https://facebook.github.io/react/), [Infe
 -   `actionName` **string**
 
 Returns **EventNames**
+
+### on
+
+Listens to an event.
+
+**parameters**
+-   `eventName` **string**
+-   `eventHanlder` **Function**
+
+### once
+
+Listens to an event once and removes listener automatically afterwards.
+
+**parameters**
+-   `eventName` **string**
+-   `eventHanlder` **Function**
+
+### off
+
+Removes listener.
+
+alias: removeListener
+
+**parameters**
+-   `eventName` **string**
+-   `eventHanlder` **Function**
+
+### emit
+
+Emits an event, calling all handlers listening to it with _payload_ .
+
+**parameters**
+-   `eventName` **string**
+-   `payload` **any**
+
 ```TS
   type EventNames = {
     triggered: string,
