@@ -1,11 +1,11 @@
 # ezFlux
 
 ezFlux is a simple JavaScript state machine with [flux](https://www.youtube.com/watch?list=PLb0IAmt7-GS188xDYE-u1ShQmFFGbrk0v&time_continue=621&v=nYkdrAPrdcw)-like event flow.  
-It manages a single, forzen, enumerable state, only manipulable by actions.
+It manages a single, forzen, enumerable state, only to be manipulable by actions.
 Designed with http and db accesses in mind, all actions are handled asynchronously.
 It can generate a comprehensive timeline, documenting all state changes.
 
-#### Mission Statement
+#### What if offers
 -   **Full transparency**: Anything accessing ezFlux is able to deduct how the state is changing and why.
 -   **Performance**: With tiny file size and a high performance, this library will simply get out of your way.
 -   **Simplicity**: Focused on a select few, vital features and minimal API, ezFlux reduces boiler plate _significantly_.
@@ -21,17 +21,18 @@ Only user actions, transparent events and one enumberable state.
     -   [History Recroding](#history-recroding)
 -   [More EZ Libraries](#more-ez-libraries)
 -   [API Documentation](#api-documentation)
-    -   [constructor](#constructor)
     -   [static getEventNames](#static-geteventnames)
+    -   [constructor](#constructor)
+    -   [history](#history)
+    -   [actions](#actions)
+    -   [state](#state)
     -   [on](#on)
     -   [off](#off)
     -   [once](#once)
     -   [emit](#emit)
-    -   [history](#history)
-    -   [actions](#actions)
-    -   [state](#state)
     -   [resetState](#resetstate)
     -   [resetStateScope](#resetstatescope)
+    -   [resetStateScope](#plug)
 -   [Contributing](#contributing)
 
 # Install
@@ -194,6 +195,24 @@ If you wish to use ezFlux with [React](https://facebook.github.io/react/), [Infe
 
 # API Documentation
 
+
+### _static_ getEventNames
+
+**parameters**
+-   `stateScopeName` **string**
+-   `actionName` **string**
+
+Returns **EventNames**
+
+```TS
+  type EventNames = {
+    triggered: string,
+    canceled: string,
+    change: string,
+    reset: string
+  };
+```
+
 ### constructor
 
 **parameters**
@@ -245,63 +264,13 @@ If you wish to use ezFlux with [React](https://facebook.github.io/react/), [Infe
       // it must resemble the final ezFlux.state - however, any key is optional.
       // useful to pass states from other instances, e.g. in SSR or testing scenarios.
       initialState?: Object,
-      // you may pass a console method (e.g. log or trace) if you wish to log events.
+      // You may pass a console method (e.g. log or trace) if you wish to log events.
       // default: ''
       console?: string
+      // ezFlux.plug will be called on each entry
+      plugins?: Function[],
     };
   ```
-### _static_ getEventNames
-
-**parameters**
--   `stateScopeName` **string**
--   `actionName` **string**
-
-Returns **EventNames**
-
-```TS
-  type EventNames = {
-    triggered: string,
-    canceled: string,
-    change: string,
-    reset: string
-  };
-```
-
-
-
-### on
-
-Listens to an event.
-
-**parameters**
--   `eventName` **string**
--   `eventHanlder` **Function**
-
-### once
-
-Listens to an event once and removes listener automatically afterwards.
-
-**parameters**
--   `eventName` **string**
--   `eventHanlder` **Function**
-
-### off
-
-Removes listener.
-
-alias: removeListener
-
-**parameters**
--   `eventName` **string**
--   `eventHanlder` **Function**
-
-### emit
-
-Emits an event, calling all handlers listening to it with _payload_ .
-
-**parameters**
--   `eventName` **string**
--   `payload` **any**
 
 ### history
 
@@ -337,17 +306,63 @@ An object, forzen up to its second dimension.
 
 Type: Object
 
-### resetState
+### on
+
+Listens to an event.
+
+**parameters**
+-   `eventName` **string**
+-   `eventHanlder` **Function**
+
+### once
+
+Listens to an event once and removes listener automatically afterwards.
+
+**parameters**
+-   `eventName` **string**
+-   `eventHanlder` **Function**
+
+### off
+
+Removes listener.
+
+alias: removeListener
+
+**parameters**
+-   `eventName` **string**
+-   `eventHanlder` **Function**
+
+### emit
+
+Emits an event, calling all handlers listening to it with _payload_ .
 
 Will reset the state to the value it had after ezFlux was constructed initially.
 
+**parameters**
+
+-   `eventName` **string**
+-   `payload` **any**
+
+### resetState
+
+
 ### resetStateScope
+
+Will reset a specific state scope to the value it had after ezFlux was constructed initially.
 
 **Parameters**
 
 -   `scopeName` **string**
 
-Will reset a specific state scope to the value it had after ezFlux was constructed initially.
+
+### plug
+
+**Parameters**
+
+-   `plugin` **Function**
+
+A given function will be bound to the ezFlux scope. It will be accessable in ezFlux.plugins
+
 
 # Contributing
 

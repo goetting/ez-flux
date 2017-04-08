@@ -40,8 +40,14 @@ describe('EZFlux', () => {
     it('should restore the state to its initial value', resetState);
   });
 
- describe('resetStateScope', () => {
+  describe('resetStateScope', () => {
     it('should reset the state scope to its initial value', resetStateScope);
+  });
+
+  describe('plug', () => {
+    it('should fail if first param is not a function or anon function', pluginFail);
+    it('should bind scope to a given function and add it to plugins', plugin);
+    it('should be able to add multiple plugins on construction', pluginOptions);
   });
 });
 
@@ -292,4 +298,41 @@ async function resetStateScope() {
   ez.resetStateScope('avengers');
 
   expect(ez.state).toEqual(defaultState);
+}
+
+function pluginFail() {
+  const ez = new EZFlux(stateConfig);
+  let e1 = null;
+  let e2 = null;
+
+  try { ez.plug({}); }
+  catch(err1) { e1 = err1 }
+  try { ez.plug(function(){}); }
+  catch(err2) { e2 = err2 }
+
+  expect(e1).toBeTruthy;
+  expect(e2).toBeTruthy;
+}
+
+function plugin() {
+  const ez = new EZFlux(stateConfig);
+  const plugin = function() {
+    expect(this.plugins.plugin.name).toEqual(`bound ${plugin.name}`);
+  };
+  ez.plug(plugin);
+  ez.plugins.plugin();
+}
+
+function pluginOptions() {
+  const plugins = [
+    function test1() {
+      expect(this.plugins.test1.name).toEqual(`bound test1`);
+    },
+    function test2() {
+      expect(this.plugins.test2.name).toEqual(`bound test2`);
+    }
+  ];
+  const ez = new EZFlux(stateConfig, { plugins });
+  ez.plugins.test1();
+  ez.plugins.test2();
 }

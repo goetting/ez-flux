@@ -18,12 +18,17 @@ type StateConfig = { [name: string]: ScopeConfig };
 type ActionTrigger = (payload: any) => Promise<void>;
 type ActionTriggers = { [string]: ActionTrigger };
 type ActionListener = (payload: any, TriggerResolver) => void;
-type consoleCFG = 'log' | 'trace' | 'error' | 'info';
-type Config = { console?: consoleCFG, recordHistory?: boolean, initialState?: Object };
+type Config = {
+  console?: 'log' | 'trace' | 'error' | 'info' | '',
+  recordHistory?: boolean,
+  initialState?: Object,
+  plugins?: Function[]
+};
 type HistoryEntry = { time: number, name: string, state: Object, payload: any };
 type History = { [time: number]: HistoryEntry };
 
 const colorMap: Object = { RESET: 'red', trigger: 'cyan', change: 'green' };
+const isFn = (fn): boolean => typeof fn === 'function';
 
 export default class EZFlux {
   static getEventNames(stateName: string, actionName: string = ''): EventNames {
@@ -49,13 +54,13 @@ export default class EZFlux {
     if (!values || typeof values !== 'object') {
       throw new Error(`ezFlux: "${name}" - must include a values object`);
     }
-    if (!actions || Object.keys(actions).find(key => typeof actions[key] !== 'function')) {
+    if (!actions || Object.keys(actions).find(key => !isFn(actions[key]))) {
       throw new Error(`ezFlux: "${name}" - actions must include dictionary of functions`);
     }
-    if (afterActions && typeof afterActions !== 'function') {
+    if (afterActions && !isFn(afterActions)) {
       throw new Error(`ezFlux: "${name}" - 'afterActions' must be a function or undefined`);
     }
-    if (beforeActions && typeof beforeActions !== 'function') {
+    if (beforeActions && !isFn(beforeActions)) {
       throw new Error(`ezFlux: "${name}" - 'beforeActions' must be a function or undefined`);
     }
   }
@@ -69,6 +74,7 @@ export default class EZFlux {
   state: Object = {};
   events: { [string]: Function[] } = {};
   removeListener = this.off;
+  plugins: Object = {};
 
   constructor(stateCfg: StateConfig = {}, options: Config = {}) {
     const scopeNames = Object.keys(stateCfg);
@@ -90,6 +96,11 @@ export default class EZFlux {
       this.addScopeToEventSystem(name, scopeConfig);
     }
     Object.freeze(this.state);
+
+    if (options.plugins) {
+      for (let i = options.plugins.length; i--;) this.plug(options.plugins[i]);
+      delete this.config.plugins;
+    }
   }
 
   addScopeToEventSystem(scopeName: string, scopeConfig: ScopeConfig): void {
@@ -139,10 +150,7 @@ export default class EZFlux {
 
       runSeries(actionCycle, (success) => {
         if (success) {
-          this.state = { ...this.state };
-          this.state[scopeName] = { ...stateChange };
-          Object.freeze(this.state);
-          Object.freeze(this.state[scopeName]);
+          this.setStateScope(scopeName, stateChange);
           this.emit(eventNames.change);
         } else {
           this.emit(eventNames.canceled);
@@ -150,6 +158,13 @@ export default class EZFlux {
         res();
       });
     };
+  }
+
+  setStateScope(name: string, newState: Object): void {
+    this.state = { ...this.state };
+    this.state[name] = { ...newState };
+    Object.freeze(this.state);
+    Object.freeze(this.state[name]);
   }
 
   logEmission(name: string = '', payload?: any): void {
@@ -164,7 +179,7 @@ export default class EZFlux {
     }
 
     if (this.config.console && console[this.config.console]) {                                      // eslint-disable-line no-console
-      const logger = console[this.config.console];                                                    // eslint-disable-line no-console
+      const logger = console[this.config.console];                                                  // eslint-disable-line no-console
       const msg: string = `ezFlux | ${name}`;
       const color: string = colorMap[name.split(':')[0]] || 'gray';
       logger(...(this.runsInBrowser ? [`%c${msg}`, `color:${color}`] : [msg]));
@@ -198,20 +213,19 @@ export default class EZFlux {
 
   resetStateScope(name: string): void {
     if (!this.defaultState[name]) throw new Error(`ezFlux.reset: ${name} not found on state`);
-
-    this.state = {
-      ...this.state,
-      ...{ [name]: { ...this.defaultState[name] } },
-    };
-    Object.freeze(this.state[name]);
+    this.setStateScope(name, this.defaultState[name]);
     this.emit(this.constructor.getEventNames(name).reset);
   }
 
   resetState(): void {
     const names = Object.keys(this.defaultState);
 
-    this.state = {};
     for (let i = names.length; i--;) this.resetStateScope(names[i]);
-    Object.freeze(this.state);
+  }
+
+  plug(fn: Function): void {
+    if (!isFn(fn) || !fn.name) throw new Error('ezFlux: plugin must be a named function');
+
+    this.plugins[fn.name] = fn.bind(this);
   }
 }
