@@ -37,8 +37,16 @@ Only user actions, transparent events and one enumberable state.
 
 # Install
 
+[NPM](https://npmjs.com):
+
 ```sh
 $ npm install ez-flux --save
+```
+
+[Yarn](https://yarnpkg.com/):
+
+```sh
+$ yarn add ez-flux
 ```
 
 # Usage
@@ -268,6 +276,7 @@ Returns **EventNames**
       // default: ''
       console?: string
       // ezFlux.plug will be called on each entry
+      // note that plugins will be executed at the end of the instance construction.
       plugins?: Function[],
     };
   ```
@@ -361,8 +370,8 @@ Will reset a specific state scope to the value it had after ezFlux was construct
 
 -   `plugin` **Function**
 
-A given function will be bound to the ezFlux scope. It will be accessable in ezFlux.plugins
-
+The given function will be appied with the ezFlux scope.
+Its return value will be Object.assigned to ezFlux.plugins;
 
 # Contributing
 

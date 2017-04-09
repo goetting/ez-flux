@@ -224,8 +224,7 @@ export default class EZFlux {
   }
 
   plug(fn: Function): void {
-    if (!isFn(fn) || !fn.name) throw new Error('ezFlux: plugin must be a named function');
-
-    this.plugins[fn.name] = fn.bind(this);
+    if (!isFn(fn)) throw new Error('ezFlux: plugin must be a function');
+    Object.assign(this.plugins, fn.apply(this));
   }
 }

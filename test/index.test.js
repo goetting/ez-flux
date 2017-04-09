@@ -48,6 +48,7 @@ describe('EZFlux', () => {
     it('should fail if first param is not a function or anon function', pluginFail);
     it('should bind scope to a given function and add it to plugins', plugin);
     it('should be able to add multiple plugins on construction', pluginOptions);
+    it('should bind ezFlux to the plugin', bindScope);
   });
 });
 
@@ -316,23 +317,31 @@ function pluginFail() {
 
 function plugin() {
   const ez = new EZFlux(stateConfig);
-  const plugin = function() {
-    expect(this.plugins.plugin.name).toEqual(`bound ${plugin.name}`);
-  };
-  ez.plug(plugin);
-  ez.plugins.plugin();
+
+  ez.plug(() => ({ test1: () => true }));
+  expect(ez.plugins.test1()).toBeTruthy;
 }
 
 function pluginOptions() {
   const plugins = [
-    function test1() {
-      expect(this.plugins.test1.name).toEqual(`bound test1`);
+    function plugin1() {
+      return { test1: () => true };
     },
-    function test2() {
-      expect(this.plugins.test2.name).toEqual(`bound test2`);
+    function plugin2() {
+      return { test2: true };
     }
   ];
-  const ez = new EZFlux(stateConfig, { plugins });
-  ez.plugins.test1();
-  ez.plugins.test2();
+  const ez = new EZFlux(stateConfig, { plugins });
+  expect(ez.plugins.test1()).toBeTruthy;
+  expect(ez.plugins.test2).toBeTruthy;
+}
+
+function bindScope() {
+  const ez = new EZFlux(stateConfig);
+
+  ez.plug(function() {
+    expect(this).toEqual(ez);
+    return { test1: () => true };
+  });
+  expect(ez.plugins.test1()).toBeTruthy;
 }
