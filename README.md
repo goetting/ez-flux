@@ -5,7 +5,7 @@ It manages a single, forzen, enumerable state, only to be manipulable by actions
 Designed with http and db accesses in mind, all actions are handled asynchronously.
 It can generate a comprehensive timeline, documenting all state changes.
 
-#### What if offers
+#### What it offers
 -   **Full transparency**: Anything accessing ezFlux is able to deduct how the state is changing and why.
 -   **Performance**: With tiny file size and a high performance, this library will simply get out of your way.
 -   **Simplicity**: Focused on a select few, vital features and minimal API, ezFlux reduces boiler plate _significantly_.
@@ -19,7 +19,9 @@ Only user actions, transparent events and one enumberable state.
     -   [Async Actions](#async-actions)
     -   [Middleware](#middleware)
     -   [History Recroding](#history-recroding)
--   [More EZ Libraries](#more-ez-libraries)
+-   [Plugins](#plugins)
+    -   [ezReact](#ezreact)
+    -   [ezProjector](#ezprojector)
 -   [API Documentation](#api-documentation)
     -   [static getEventNames](#static-geteventnames)
     -   [constructor](#constructor)
@@ -196,10 +198,26 @@ Now, [ezFlux.history](#history) will be accessable und continuously populated.
 ezFlux.history
 ```
 
-# More EZ Libraries
 
-If you wish to use ezFlux with [React](https://facebook.github.io/react/), [Inferno](https://infernojs.org/), [Preact](https://preactjs.com/) or any other react-compatible library:
-- [ez-react](https://github.com/goetting/ez-react)
+### Plugins
+
+Plugins may add useful tools to ezFlux.plugins or mix additional functionality into an ezFlux instance.  
+They are passed either through options on construction or plugged individually with ezFlux.plug().
+
+A plugin is a simple function to which the ezFlux instance will be applied.  
+Its return value will be Object.assigned to ezFlux.plugins.  
+Plugin authors may mutate the ezFlux instance freely. However, the default API should be kept intact.
+
+Some examples:
+
+### [ezReact](https://github.com/goetting/ez-react)
+
+Useful if you wish to use ezFlux with [React](https://facebook.github.io/react/), [Inferno](https://infernojs.org/), [Preact](https://preactjs.com/) or any other react-compatible library:
+
+### [ezProjector](https://github.com/goetting/ez-react)
+
+Creates a mutable projection of selected state values. It will have a one-way binding with the ezFlux state and update automatically if the state changes. This is useful for libraries that bind their behaviour directly to object mutation, such as [Vue](https://vuejs.org/).
+
 
 # API Documentation
 

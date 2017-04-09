@@ -7,7 +7,7 @@
     "start": "bash start.sh",
     "build": "babel src --out-dir lib",
     "lint:fix": "eslint --color --fix --ext .js ./src",
-    "test": "NODE_ENV=test jest",
+    "test": "jest",
     "test:coverage": "NODE_ENV=test jest --coverage"
   },
   "repository": {

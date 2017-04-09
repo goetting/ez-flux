@@ -25,7 +25,7 @@ JOBS=(
   "babel src --out-dir lib --watch"
   "nodemon -q --watch src --ext js -x 'eslint --color --ext .js ./src; echo'"
   "nodemon -q --watch src --ext js -x 'flow; echo'"
-  "NODE_ENV=test jest --watch"
+  "jest --watchAll"
 )
 NAMES="Babel,Lint,Flow,Test"
 COLORS="bgGreen.black,bgYellow.black,bgMagenta.black,bgBlue.black"
