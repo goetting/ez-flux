@@ -214,7 +214,7 @@ Some examples:
 
 Useful if you wish to use ezFlux with [React](https://facebook.github.io/react/), [Inferno](https://infernojs.org/), [Preact](https://preactjs.com/) or any other react-compatible library:
 
-### [ezProjector](https://github.com/goetting/ez-react)
+### [ezProjector](https://github.com/goetting/ez-projector)
 
 Creates a mutable projection of selected state values. It will have a one-way binding with the ezFlux state and update automatically if the state changes. This is useful for libraries that bind their behaviour directly to object mutation, such as [Vue](https://vuejs.org/).
 

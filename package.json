@@ -2,7 +2,7 @@
   "name": "ez-flux",
   "version": "0.9.1",
   "description": "an easy to use flux implementation",
-  "main": "./lib/index.js",
+  "main": "./lib/ez-flux.js",
   "scripts": {
     "start": "bash start.sh",
     "build": "babel src --out-dir lib",

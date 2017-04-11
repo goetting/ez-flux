@@ -1,4 +1,4 @@
-import EZFlux from '../src/index.js';
+import EZFlux from '../lib/ez-flux.js';
 
 describe('EZFlux', () => {
   it('should spawn without blowing up', ezFluxShouldSpawn);
@@ -204,8 +204,8 @@ async function actionsCancel() {
 }
 
 function stateChangeEvents(done) {
-  const eventNames = EZFlux.getEventNames('avengers', 'setData');
   const ez = new EZFlux(stateConfig);
+  const eventNames = EZFlux.getEventNames('avengers', 'setData');
   let oneDone = false;
   const cb = () => { oneDone ? done() : oneDone = true; };
 
@@ -243,7 +243,6 @@ async function beforeAction() {
     expect(payload).toEqual('green');
     expect(stateChange).toEqual(ez.state.avengers);
     expect(actionName).toEqual('setHulk');
-    expect(ezFlux instanceof EZFlux);
 
     return { thor: 'hammered' };
   };
@@ -260,7 +259,6 @@ async function afterAction() {
     expect(payload).toEqual('green');
     expect(stateChange).toEqual(Object.assign({}, ez.state.avengers, { hulk: 'green' }));
     expect(actionName).toEqual('setHulk');
-    expect(ezFlux instanceof EZFlux);
 
     return { hulk: 'red' };
   };
