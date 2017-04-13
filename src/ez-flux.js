@@ -29,6 +29,7 @@ type Config = {
 type HistoryEntry = { time: number, name: string, state: Object, payload: any };
 type History = { [time: number]: HistoryEntry };
 
+const hasConsole: boolean = typeof console !== 'undefined';
 const colorMap: Object = { RESET: 'red', trigger: 'cyan', change: 'green' };
 const isFn = (fn): boolean => typeof fn === 'function';
 
@@ -87,12 +88,7 @@ export default class EZFlux extends MiniMitter {
       const scopeConfig: ScopeConfig = stateCfg[name];
 
       this.constructor.validateScope(name, scopeConfig);
-
-      this.state[name] = { ...scopeConfig.values };
-      this.defaultState[name] = { ...scopeConfig.values };
-      if (initState[name]) Object.assign(this.state[name], initState[name]);
-      Object.freeze(this.state[name]);
-
+      this.addScopeToState(name, scopeConfig.values, initState[name]);
       this.addScopeToEventSystem(name, scopeConfig);
     }
     Object.freeze(this.state);
@@ -103,9 +99,23 @@ export default class EZFlux extends MiniMitter {
     }
   }
 
+  addScopeToState(name: string, values: Object, initValues?: Object = {}): void {
+    const keys = Object.keys(values);
+
+    this.state[name] = {};
+    for (let i = keys.length; i--;) {
+      const key = keys[i];
+      const val = values[key];
+
+      if (!isFn(val)) this.state[name][key] = initValues[key] || val;
+      else Object.defineProperty(this.state[name], key, { enumerable: true, get: val.bind(this) });
+    }
+    this.defaultState[name] = Object.freeze(this.state[name]);
+  }
+
   addScopeToEventSystem(scopeName: string, scopeConfig: ScopeConfig): void {
-    const actionNames = Object.keys(scopeConfig.actions);
     const { beforeActions, afterActions, actions } = scopeConfig;
+    const actionNames = Object.keys(actions);
 
     this.actions[scopeName] = {};
 
@@ -180,7 +190,7 @@ export default class EZFlux extends MiniMitter {
       this.history[time] = { time, name, state, payload };
     }
 
-    if (this.config.console && console[this.config.console]) {                                      // eslint-disable-line no-console
+    if (hasConsole && this.config.console && console[this.config.console]) {                        // eslint-disable-line no-console
       const logger = console[this.config.console];                                                  // eslint-disable-line no-console
       const msg: string = `ezFlux | ${name}`;
       const color: string = colorMap[name.split(':')[0]] || 'gray';

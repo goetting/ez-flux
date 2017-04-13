@@ -20,7 +20,6 @@ describe('MiniMitter', () => {
     it('should subscribe an event', onceSubscribe);
     it('should unsubsribe an event after emission', onceUnsubscribe);
     it('should return an Emitter instance', onceReturnInst);
-
   });
 
   describe('emit', () => {
@@ -111,10 +110,25 @@ function offReturnInst() {
 
 function onceSubscribe() {
   const mini = new MiniMitter();
+  let removed = false;
+
+  mini.once('test', fn);
+  expect(mini.events.test[0]).toEqual(fn);
+
+  mini.on('removeListener', () => { removed = true; });
+
+  mini.emit('test');
+  expect(mini.events.test[0]).toBeFalsy();
+
+  expect(removed).toBeTruthy;
 }
 
 function onceUnsubscribe() {
+
   const mini = new MiniMitter();
+
+  mini.once('test', fn);
+  expect(mini.events.test[0]).toEqual(fn);
 }
 
 function onceReturnInst() {
@@ -124,7 +138,20 @@ function onceReturnInst() {
 }
 
 function emitTriggerAll() {
+  let counter = 0;
   const mini = new MiniMitter();
+  const testfn1 = () => counter++;
+  const testfn2 = testfn1;
+
+  mini.on('test', testfn1);
+  mini.on('test', testfn2);
+
+  expect(mini.events.test[0]).toEqual(testfn1);
+  expect(mini.events.test[1]).toEqual(testfn2);
+
+  mini.emit('test');
+
+  expect(counter).toEqual(2);
 }
 
 function emitReutrnInst() {

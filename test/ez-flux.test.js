@@ -1,4 +1,4 @@
-import EZFlux from '../lib/ez-flux.js';
+import EZFlux from '../src/ez-flux.js';
 
 describe('EZFlux', () => {
   it('should spawn without blowing up', ezFluxShouldSpawn);
@@ -9,6 +9,7 @@ describe('EZFlux', () => {
     it('should fail without state', storeFailsWithoutStates);
     it('should fail if actions is no function dictionary', storeFailsIfWrongReactions);
     it('should assign init state to current state scope values', assignInitState);
+    it('should convert function values to state getters', stateGetters);
   });
 
   describe('action trigger creation', () => {
@@ -28,6 +29,7 @@ describe('EZFlux', () => {
     it('should fire trigger event and state change event on statechange', stateChangeEvents);
     it('should return a promise', actionReturnsPromise);
     it('should set states asynchronously propperly', asyncActions);
+    it('should fail if beforeActions or afterActions are not function or undefined', validCycleHooks);
     it('should be called after "beforeAction" when given', beforeAction);
     it('should be called before "afterAction" when given', afterAction);
   });
@@ -142,11 +144,21 @@ function storeFailsIfWrongReactions() {
 }
 
 function assignInitState() {
-  const initialState = { avengers: { hulk: 'red', blackWiddow: 'cat suited' } };
+  const initialState = { avengers: { hulk: 'red'} };
   const expectedAvengers = Object.assign({}, stateConfig.avengers.values, initialState.avengers);
-  const ez = new EZFlux(stateConfig, { initialState});
+  const ez = new EZFlux(stateConfig, { initialState });
 
   expect(ez.state.avengers).toEqual(expectedAvengers);
+}
+
+function stateGetters() {
+  const { stateConfig } = getTestData();
+
+  stateConfig.avengers.values.evilThor = function() {
+    return `${this.state.avengers.thor} in an evil way`;
+  };
+  const ez = new EZFlux(stateConfig);
+  expect(ez.state.avengers.evilThor).toEqual(`${ez.state.avengers.thor} in an evil way`)
 }
 
 function actionCreate() {
@@ -235,6 +247,21 @@ function asyncActions() {
       clearInterval(interval);
       expect(true).toBeFalsy();
     });
+}
+
+function validCycleHooks() {
+  const { stateConfig } = getTestData();
+  let errCounter = 0;
+
+  stateConfig.avengers.beforeActions = 5;
+  try { let ez = new EZFlux(stateConfig); } catch(e) { errCounter++; }
+
+  delete stateConfig.avengers.beforeActions;
+  stateConfig.avengers.afterActions = 'lol';
+
+  try { ez = new EZFlux(stateConfig); } catch(e) { errCounter++; }
+
+  expect(errCounter).toEqual(2);
 }
 
 async function beforeAction() {

@@ -87,7 +87,9 @@ ezFlux.actions.weather.setRain(true);
 // Triggers our action. Our listener will now log: { rain: true };
 ```
 
-It's strongly discouraged to use nested objects as state values since only primitive state values will be save guarded by Object.freeze and cloning.
+It's strongly discouraged to use nested objects as state values since only primitive state values 
+will be save guarded by Object.freeze and cloning.  
+State values may also be function. They will converted into getters and bound to the instance scope.
 
 ### Async Actions
 
@@ -246,8 +248,9 @@ Returns **EventNames**
   ```TS
     type StateConfig = {
       [stateNameSpace: any]: {
-        // Value members must not be functions/classes or circular.
-        // Value members should not be Objects or Arrays.
+        // Value members must not be circular.
+        // Value members should not be Objects or Arrays because of deep referencing.
+        // Functions will be converted into immutable, enumerable getters.
         // Only the first dimension will be frozen and save guarded.
         values: Object,
         // Returned Object | Promsise<Object> will be applied to the stateNameSpace
@@ -291,6 +294,7 @@ Returns **EventNames**
       // useful to pass states from other instances, e.g. in SSR or testing scenarios.
       initialState?: Object,
       // You may pass a console method (e.g. log or trace) if you wish to log events.
+      // values not found on the StateConfig will be ignored.
       // default: ''
       console?: string
       // ezFlux.plug will be called on each entry
