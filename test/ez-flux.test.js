@@ -36,6 +36,7 @@ describe('EZFlux', () => {
 
   describe('config', () => {
     it('should set config values while constructing', configConstruction);
+    it('should call onEmit callback if given', configEmit);
   });
 
   describe('resetState', () => {
@@ -299,6 +300,23 @@ function configConstruction() {
   const ez = new EZFlux(stateConfig, { recordHistory: true });
 
   expect(ez.config.recordHistory).toEqual(true);
+}
+
+async function configEmit() {
+  let called = false;
+  const ez = new EZFlux(
+    stateConfig,
+    {
+      onEmit(name, payload, inst) {
+      called = true;
+      expect(inst instanceof EZFlux).toBeTruthy();
+      expect(typeof name === 'string').toBeTruthy();
+    },
+  });
+  await ez.actions.avengers.setHulk('green');
+
+  expect(called).toEqual(true);
+
 }
 
 async function resetState() {

@@ -21,7 +21,7 @@ type ActionTrigger = (payload: any) => Promise<void>;
 type ActionTriggers = { [string]: ActionTrigger };
 type ActionListener = (payload: any, TriggerResolver) => void;
 type Config = {
-  console?: 'log' | 'trace' | 'error' | 'info' | '',
+  onEmit?: (name: string, payload: any, ezFlux: Object) => void,
   recordHistory?: boolean,
   initialState?: Object,
   plugins?: Function[]
@@ -29,8 +29,6 @@ type Config = {
 type HistoryEntry = { time: number, name: string, state: Object, payload: any };
 type History = { [time: number]: HistoryEntry };
 
-const hasConsole: boolean = typeof console !== 'undefined';
-const colorMap: Object = { RESET: 'red', trigger: 'cyan', change: 'green' };
 const isFn = (fn): boolean => typeof fn === 'function';
 
 export default class EZFlux extends MiniMitter {
@@ -70,7 +68,6 @@ export default class EZFlux extends MiniMitter {
 
   history: History = {};
   config: Config = {};
-  runsInBrowser: boolean = typeof window !== 'undefined' && !!window.requestAnimationFrame;
   actions: { [string]: ActionTriggers } = {};
   defaultState: Object = {};
   state: Object = {};
@@ -189,12 +186,8 @@ export default class EZFlux extends MiniMitter {
 
       this.history[time] = { time, name, state, payload };
     }
-
-    if (hasConsole && this.config.console && console[this.config.console]) {                        // eslint-disable-line no-console
-      const logger = console[this.config.console];                                                  // eslint-disable-line no-console
-      const msg: string = `ezFlux | ${name}`;
-      const color: string = colorMap[name.split(':')[0]] || 'gray';
-      logger(...(this.runsInBrowser ? [`%c${msg}`, `color:${color}`] : [msg]));
+    if (this.config.onEmit) {
+      this.config.onEmit(name, payload, this);
     }
     return this;
   }
