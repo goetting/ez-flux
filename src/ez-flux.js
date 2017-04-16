@@ -156,22 +156,19 @@ export default class EZFlux extends MiniMitter {
       };
 
       runSeries(actionCycle, (success) => {
-        if (success) {
-          this.setStateScope(scopeName, stateChange);
-          this.emit(eventNames.change);
-        } else {
-          this.emit(eventNames.canceled);
-        }
+        if (success) this.setStateScope(scopeName, stateChange, eventNames.change);
+        else this.emit(eventNames.canceled);
         res();
       });
     };
   }
 
-  setStateScope(name: string, newState: Object): void {
+  setStateScope(name: string, newState: Object, eventName: string): void {
     this.state = { ...this.state };
     this.state[name] = { ...newState };
     Object.freeze(this.state);
     Object.freeze(this.state[name]);
+    this.emit(eventName);
   }
 
   emit(name: string = '', payload?: any, res?: TriggerResolver): EZFlux {
@@ -194,8 +191,7 @@ export default class EZFlux extends MiniMitter {
 
   resetStateScope(name: string): void {
     if (!this.defaultState[name]) throw new Error(`ezFlux.reset: ${name} not found on state`);
-    this.setStateScope(name, this.defaultState[name]);
-    this.emit(this.constructor.getEventNames(name).reset);
+    this.setStateScope(name, this.defaultState[name], this.constructor.getEventNames(name).reset);
   }
 
   resetState(): void {
