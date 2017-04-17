@@ -18,6 +18,7 @@ Only user actions, transparent events and one enumberable state.
     -   [Getting Started](#getting-started)
     -   [Async Actions](#async-actions)
     -   [Middleware](#middleware)
+    -   [Async Action Orchestration](#async-action-orchestration)
     -   [History Recroding](#history-recroding)
 -   [Plugins](#plugins)
     -   [ezReact](#ezreact)
@@ -170,6 +171,62 @@ const ezFlux = new EZFlux({
   },
 });
 ```
+
+### Async Action Orchestration
+
+You are free to call actions from within actions to solve simple problems like an "isLoading" flag.
+
+```JS
+const ezFlux = new EZFlux({
+  weather: {
+    values: {
+      rain: true,
+      temperature: 0,
+      isLoading: false,
+    },
+    actions: {
+      isLoading: isLoading => ({ isLoading }),
+      callAPI: async (query, values, { actions }) => {
+        // first we are setting "isLoading" to inform all listeners
+        await actions.weather.isLoading(true);
+
+        // async IO
+        const { temperature, rain } = await apiCall(query);
+
+        // "isLoading" is set back to false;
+        return { temperature, rain, isLoading: false };
+      },
+    },
+  },
+});
+```
+However, it is more save to use an orchestrater for action calls.  
+This will protect you from accidentally negating state changes made from within your workflow.
+
+```JS
+const ezFlux = new EZFlux({
+  weather: {
+    values: {
+      rain: true,
+      temperature: 0,
+      isLoading: false,
+    },
+    actions: {
+      isLoading: isLoading => ({ isLoading }),
+      callAPI: async (query) => {
+        const { temperature, rain } = await apiCall(query);
+
+        return { temperature, rain, isLoading: false };
+      },
+      orchestrateAPICall: async (query, values, { actions }) => {
+        await actions.weather.isLoading(true);
+        return actions.weather.callAPI(query);
+      },
+    },
+  },
+});
+```
+
 ### History Recroding
 
 Passing recordHistory _true_ with options on constrcution will enable history recording.  
@@ -325,7 +382,8 @@ Please note that an action may be called with only one arguement.
 ```TS
   type Actions = {
     [stateScopeName: any]: {
-      [actionName: any]: (payload: any) => Promise<void>,
+      // returns either writable copy of changed state scope or void if the action was canceled
+      [actionName: any]: (payload: any) => Promise<Object|void>,
     },
   };
 ```

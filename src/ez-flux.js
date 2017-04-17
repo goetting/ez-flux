@@ -156,9 +156,13 @@ export default class EZFlux extends MiniMitter {
       };
 
       runSeries(actionCycle, (success) => {
-        if (success) this.setStateScope(scopeName, stateChange, eventNames.change);
-        else this.emit(eventNames.canceled);
-        res();
+        if (success) {
+          this.setStateScope(scopeName, stateChange, eventNames.change);
+          res(stateChange);
+        } else {
+          this.emit(eventNames.canceled);
+          res();
+        }
       });
     };
   }
