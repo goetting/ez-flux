@@ -238,7 +238,7 @@ import EZFlux from 'ez-flux';
 import scopeConfig from './scope-config';
 
 const options = {
-  onEmit: console.log,
+  onFluxEmit: console.log,
   history: {
     record: true,
     log: true,
@@ -350,9 +350,9 @@ Returns **EventNames**
       // it must resemble the final ezFlux.state - however, any key is optional.
       // useful to pass states from other instances, e.g. in SSR or testing scenarios.
       initialState?: Object,
-      // A given callback will be called on each event emission
+      // A given callback will be called on each event emitted by ezFlux
       // default: void
-      onEmit?: (name: string, payload: any, ezFlux: typeof EZFlux) => void,
+      onFluxEmit?: (name: string, payload: any, ezFlux: typeof EZFlux) => void,
       // ezFlux.plug will be called on each entry
       // note that plugins will be executed at the end of the instance construction.
       plugins?: Function[],

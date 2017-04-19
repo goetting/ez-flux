@@ -307,7 +307,7 @@ async function configEmit() {
   const ez = new EZFlux(
     stateConfig,
     {
-      onEmit(name, payload, inst) {
+      onFluxEmit(name, payload, inst) {
       called = true;
       expect(inst instanceof EZFlux).toBeTruthy();
       expect(typeof name === 'string').toBeTruthy();

@@ -16,12 +16,13 @@ type ScopeConfig = {
   afterActions?: Action,
 };
 type TriggerResolver = () => void;
+type TriggerRejecter = () => void;
 type StateConfig = { [name: string]: ScopeConfig };
 type ActionTrigger = (payload: any) => Promise<void>;
 type ActionTriggers = { [string]: ActionTrigger };
-type ActionListener = (payload: any, TriggerResolver) => void;
+type ActionListener = (payload: any, TriggerResolver, TriggerRejecter) => void
 type Config = {
-  onEmit?: (name: string, payload: any, ezFlux: Object) => void,
+  onFluxEmit?: (name: string, payload: any, ezFlux: Object) => void,
   recordHistory?: boolean,
   initialState?: Object,
   plugins?: Function[]
@@ -122,11 +123,16 @@ export default class EZFlux extends MiniMitter {
       const action = actions[actionName];
       const actionCycle = this.constructor.getActionCycle(action, beforeActions, afterActions);
       const listener = this.getActionListener(scopeName, actionName, actionCycle, eventNames);
-      const trigger = payload => new Promise(res => this.emit(eventNames.triggered, payload, res));      // eslint-disable-line no-loop-func
+      const trigger = this.getActionTrigger(eventNames);
 
       this.actions[scopeName][actionName] = trigger;
       this.on(eventNames.triggered, listener);
     }
+  }
+
+  getActionTrigger(eventNames: EventNames) {
+    return (payload: any) =>
+      new Promise((res, rej) => this.fluxEmit(eventNames.triggered, payload, res, rej));
   }
 
   getActionListener(
@@ -135,7 +141,7 @@ export default class EZFlux extends MiniMitter {
     actionCycle: Action[],
     eventNames: EventNames,
   ): ActionListener {
-    return (payload, res): void => {
+    return (payload, res, rej): void => {
       let i = actionCycle.length - 1;
       const stateChange = Object.seal({ ...this.state[scopeName] });
       const runSeries = (actions, cb) => {
@@ -145,14 +151,18 @@ export default class EZFlux extends MiniMitter {
             cb(false);
             return;
           }
-          Object.assign(stateChange, actionResult);
-          i -= 1;
-          if (actions[i]) runSeries(actions, cb);
-          else cb(true);
+          try {
+            Object.assign(stateChange, actionResult);
+            i -= 1;
+            if (actions[i]) runSeries(actions, cb);
+            else cb(true);
+          } catch (err) {
+            rej(err);
+          }
         };
 
         if (!result || !result.then) validateActionResult(result);
-        else result.then(validateActionResult);
+        else result.then(validateActionResult).catch(rej);
       };
 
       runSeries(actionCycle, (success) => {
@@ -160,7 +170,7 @@ export default class EZFlux extends MiniMitter {
           this.setStateScope(scopeName, stateChange, eventNames.change);
           res(stateChange);
         } else {
-          this.emit(eventNames.canceled);
+          this.fluxEmit(eventNames.canceled);
           res();
         }
       });
@@ -172,11 +182,11 @@ export default class EZFlux extends MiniMitter {
     this.state[name] = { ...newState };
     Object.freeze(this.state);
     Object.freeze(this.state[name]);
-    this.emit(eventName);
+    this.fluxEmit(eventName);
   }
 
-  emit(name: string = '', payload?: any, res?: TriggerResolver): EZFlux {
-    super.emit(name, payload, res);
+  fluxEmit(name: string = '', payload?: any, res?: TriggerResolver, rej?: TriggerRejecter): EZFlux {
+    this.emit(name, payload, res, rej);
 
     if (this.config.recordHistory) {
       const time: number = Date.now();
@@ -187,8 +197,8 @@ export default class EZFlux extends MiniMitter {
 
       this.history[time] = { time, name, state, payload };
     }
-    if (this.config.onEmit) {
-      this.config.onEmit(name, payload, this);
+    if (this.config.onFluxEmit) {
+      this.config.onFluxEmit(name, payload, this);
     }
     return this;
   }
