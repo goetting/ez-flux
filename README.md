@@ -17,8 +17,8 @@ Only user actions, transparent events and one enumberable state.
 -   [Usage](#usage)
     -   [Getting Started](#getting-started)
     -   [Async Actions](#async-actions)
-    -   [Middleware](#middleware)
     -   [Async Action Orchestration](#async-action-orchestration)
+    -   [Action Hooks](#action-hooks)
     -   [History Recroding](#history-recroding)
 -   [Plugins](#plugins)
     -   [ezReact](#ezreact)
@@ -96,7 +96,6 @@ State values may also be functions. They will be converted to getters and bound 
 
 All actions are executed asyncronously, their triggers returning promises.  
 As a result an action may be an async function, accepting a promise as a return value.
-An actions will always be be executed in the next tick.  
 
 
 ```JS
@@ -120,12 +119,11 @@ const ezFlux = new EZFlux({
 });
 ```
 
-In simple situations, this can be helpful if you wish to avoid helper values like "isLoading" on your state.
+Further more, an action will always return the current values of its state scope.
 
 ```JS
 aync function renderCityWeather(city) {
-  await ezFlux.actions.weather.loadData({ city });
-  const { weather } = ezFlux.state;
+  const weather = await ezFlux.actions.weather.loadData({ city });
 
   renderData(weather);
 }
@@ -133,7 +131,63 @@ aync function renderCityWeather(city) {
 You may freely use this behavour to orchestrate more complex workflows.  
 The EZFlux instance will still emit the propper events for actions triggered and states changed to anyone subscribed.
 
-### Middleware
+
+### Async Action Orchestration
+
+You are free to call actions from within actions to solve simple problems like an "isLoading" flag.
+
+```JS
+const ezFlux = new EZFlux({
+  weather: {
+    values: {
+      rain: true,
+      temperature: 0,
+      isLoading: false,
+    },
+    actions: {
+      isLoading: isLoading => ({ isLoading }),
+      callAPI: async (query, values, { actions }) => {
+        // first we are setting "isLoading" to inform all listeners
+        await actions.weather.isLoading(true);
+
+        // async IO
+        const { temperature, rain } = await apiCall(query);
+
+        // "isLoading" is set back to false;
+        return { temperature, rain, isLoading: false };
+      },
+    },
+  },
+});
+```
+However, it is more save to use an orchestrater for action calls.  
+This will protect you from accidentally negating state changes made from within your workflow, should yuo be using action hooks.
+
+```JS
+const ezFlux = new EZFlux({
+  weather: {
+    values: {
+      rain: true,
+      temperature: 0,
+      isLoading: false,
+    },
+    actions: {
+      isLoading: isLoading => ({ isLoading }),
+      callAPI: async (query) => {
+        const { temperature, rain } = await apiCall(query);
+
+        return { temperature, rain, isLoading: false };
+      },
+      requestData: async (query, values, { actions }) => {
+        await actions.weather.isLoading(true);
+        return actions.weather.callAPI(query);
+      },
+    },
+  },
+});
+```
+
+### Action Hooks
 
 _beforeActions_ and _afterActions_ hooks can be provided to be called on action trigger. 
 Just like actions, these methods can be used asynchronously.
@@ -172,64 +226,9 @@ const ezFlux = new EZFlux({
 });
 ```
 
-### Async Action Orchestration
-
-You are free to call actions from within actions to solve simple problems like an "isLoading" flag.
-
-```JS
-const ezFlux = new EZFlux({
-  weather: {
-    values: {
-      rain: true,
-      temperature: 0,
-      isLoading: false,
-    },
-    actions: {
-      isLoading: isLoading => ({ isLoading }),
-      callAPI: async (query, values, { actions }) => {
-        // first we are setting "isLoading" to inform all listeners
-        await actions.weather.isLoading(true);
-
-        // async IO
-        const { temperature, rain } = await apiCall(query);
-
-        // "isLoading" is set back to false;
-        return { temperature, rain, isLoading: false };
-      },
-    },
-  },
-});
-```
-However, it is more save to use an orchestrater for action calls.  
-This will protect you from accidentally negating state changes made from within your workflow.
-
-```JS
-const ezFlux = new EZFlux({
-  weather: {
-    values: {
-      rain: true,
-      temperature: 0,
-      isLoading: false,
-    },
-    actions: {
-      isLoading: isLoading => ({ isLoading }),
-      callAPI: async (query) => {
-        const { temperature, rain } = await apiCall(query);
-
-        return { temperature, rain, isLoading: false };
-      },
-      orchestrateAPICall: async (query, values, { actions }) => {
-        await actions.weather.isLoading(true);
-        return actions.weather.callAPI(query);
-      },
-    },
-  },
-});
-```
-
 ### History Recroding
 
-Passing recordHistory _true_ with options on constrcution will enable history recording.  
+Passing the recordHistory _true_ option on constrcution will enable history recording.  
 This allows you to exactly deduct what is manipulating your state and when.
 Please note, however, that the state scopes will only be shallow cloned. Thus, nested changes will not be documented.  
 
@@ -252,10 +251,7 @@ ezFlux.actions.weather.setRain(true);
 ```
 
 Now, [ezFlux.history](#history) will be accessable und continuously populated.
-
-```JS
-ezFlux.history
-```
+If you wish to use a custom recording or logging mechanism, you can pass the optional _onFluxEmit_ function on [construction](#constructor)
 
 
 ### Plugins
