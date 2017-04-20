@@ -90,7 +90,7 @@ ezFlux.actions.weather.setRain(true);
 
 It's strongly discouraged to use nested objects as state values since only primitive state values 
 will be save guarded by Object.freeze and cloning.  
-State values may also be function. They will converted into getters and bound to the instance scope.
+State values may also be functions. They will be converted to getters and bound to the instance scope.
 
 ### Async Actions
 
