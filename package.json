@@ -1,6 +1,6 @@
 {
   "name": "ez-flux",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "an easy to use flux implementation",
   "main": "./lib/ez-flux.js",
   "scripts": {
