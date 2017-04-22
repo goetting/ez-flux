@@ -186,8 +186,6 @@ export default class EZFlux extends MiniMitter {
   }
 
   fluxEmit(name: string = '', payload?: any, res?: TriggerResolver, rej?: TriggerRejecter): EZFlux {
-    this.emit(name, payload, res, rej);
-
     if (this.config.recordHistory) {
       const time: number = Date.now();
       const state = {};
@@ -200,6 +198,7 @@ export default class EZFlux extends MiniMitter {
     if (this.config.onFluxEmit) {
       this.config.onFluxEmit(name, payload, this);
     }
+    this.emit(name, payload, res, rej);
     return this;
   }
 
