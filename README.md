@@ -452,9 +452,14 @@ Its return value will be Object.assigned to ezFlux.plugins;
 
 Contributions of any kind are always welcome!
 
-To run Linter, Flow, Bable and Jest and have them watch src and test folders respectively:
+To run Linter, Flow, Babel and have them watch src and test folders respectively:
 ```sh
 $ npm start
+```
+
+To run jest and have it watch:
+```sh
+$ npm run test:watch
 ```
 
 To run Babel once:

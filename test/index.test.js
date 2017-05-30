@@ -29,12 +29,6 @@ describe('store', () => {
       it('should emit change if a child changes', emitChildChange);
     });
 
-    describe('children', () => {
-      it('should add children', childOk);
-      it('should not allow configuration of children', childrensNotConfigurable);
-      it('should emit change if a child changes', emitChildChange);
-    });
-
     describe('immutable', () => {
       it('should ignore directly assigned values', immutableDirectly);
       it('should make $assign available only in methods', assignOnlyInMethods);
@@ -132,7 +126,7 @@ const makeParentChild = () => {
 function spawns() {
   const ez = getEZStore();
 
-  ez.should.be.ok;
+  expect(ez).toBeTruthy();
 }
 
 function gettersSettersOk() {
@@ -144,8 +138,8 @@ function gettersSettersOk() {
     .forEach((k) => {
       const descriptors = Object.getOwnPropertyDescriptor(ez, k);
 
-      descriptors.get.should.be.a('function');
-      descriptors.set.should.be.a('function');
+      expect(typeof descriptors.get).toBe('function');
+      expect(typeof descriptors.set).toBe('function');
     });
 }
 
@@ -155,7 +149,7 @@ function gettersOk() {
 
   Object
     .keys(state)
-    .forEach(k => ez[k].should.equal(state[k]));
+    .forEach(k => expect(ez[k]).toBe(state[k]));
 }
 
 function settersOk() {
@@ -164,9 +158,9 @@ function settersOk() {
 
   ez.$on('change', () => { eventFired = true; });
   ez.val1 = 11;
-  ez.val1.should.be.equal(11);
 
-  eventFired.should.be.ok;
+  expect(ez.val1).toBe(11);
+  expect(eventFired).toBe(true);
 }
 
 function methodAdded() {
@@ -180,7 +174,7 @@ function methodAdded() {
   });
 
   ez.testMethod();
-  methodCalled.should.be.ok;
+  expect(methodCalled).toBe(true);
 }
 
 function methodBound() {
@@ -189,24 +183,26 @@ function methodBound() {
     methods: {
       testMethod() {
         methodCalled = true;
-        this.$assign.should.be.a('function');
-        this.$emit.should.be.a('function');
+        expect(typeof this.$assign).toBe('function');
+        expect(typeof this.$emit).toBe('function');
       },
     },
   });
 
   ez.testMethod();
-  methodCalled.should.be.ok;
+
+  expect(methodCalled).toBe(true);
 }
 
 function computedOk() {
-  createStore({
+  const store = createStore({
     computed: {
       test: {
         get: () => 'success',
       },
     },
-  }).test.should.equal('success');
+  });
+  expect(store.test).toBe('success');
 }
 
 function computedBound() {
@@ -221,14 +217,14 @@ function computedBound() {
       },
     },
   });
-  ez.test.should.equal('bar');
+  expect(ez.test).toBe('bar');
   ez.test = 'foo';
-  ez.test.should.equal('baz');
+  expect(ez.test).toBe('baz');
 }
 
 function childOk() {
   const { parent } = makeParentChild();
-  parent.child.foo.should.be.ok;
+  expect(parent.child.foo).toBeTruthy();
 }
 
 function childrensNotConfigurable() {
@@ -241,8 +237,8 @@ function childrensNotConfigurable() {
     error = ex;
   }
 
-  error.should.be.ok;
-  parent.child.foo.should.equal(true);
+  expect(error).toBeTruthy();
+  expect(parent.child.foo).toBe(true);
 }
 
 function emitChildChange() {
@@ -252,9 +248,9 @@ function emitChildChange() {
   parent.$once('change', () => { emitSuccess = true; });
 
   parent.child.foo = false;
-  parent.child.foo.should.not.be.ok;
 
-  emitSuccess.should.be.ok;
+  expect(parent.child.foo).toBe(false);
+  expect(emitSuccess).toBe(true);
 }
 
 function immutableDirectly() {
@@ -269,8 +265,8 @@ function immutableDirectly() {
   } catch (e) {
     threwException = true;
   }
-  threwException.should.be.ok;
-  store.foo.should.be.ok;
+  expect(threwException).toBeTruthy();
+  expect(store.foo).toBe(true);
 }
 
 function assignOnlyInMethods() {
@@ -286,7 +282,7 @@ function assignOnlyInMethods() {
 
   store.mutate();
 
-  store.foo.should.not.be.ok;
+  expect(store.foo).toBe(false);
 }
 
 function assignOk() {
@@ -294,15 +290,15 @@ function assignOk() {
   const testObj1 = { val1: 'assigntest1', val2: 'assigntest2' };
   const testObj2 = { val1: 'assigntest3', val3: 'assigntest4' };
 
-  store.val1.should.equal(1);
-  store.val2.should.equal(2);
-  store.val3.should.equal(3);
+  expect(store.val1).toBe(1);
+  expect(store.val2).toBe(2);
+  expect(store.val3).toBe(3);
 
   store.$assign(testObj1, testObj2);
 
-  store.val1.should.equal('assigntest3');
-  store.val2.should.equal('assigntest2');
-  store.val3.should.equal('assigntest4');
+  expect(store.val1).toBe('assigntest3');
+  expect(store.val2).toBe('assigntest2');
+  expect(store.val3).toBe('assigntest4');
 }
 
 function assignEmit() {
@@ -313,10 +309,11 @@ function assignEmit() {
   store.$once('change', () => { emissionSuccess = true; });
   store.$assign(testObj2);
 
-  store.val1.should.equal('assigntest3');
-  store.val2.should.equal(2);
-  store.val3.should.equal('assigntest4');
-  emissionSuccess.should.be.ok;
+  expect(store.val1).toBe('assigntest3');
+  expect(store.val2).toBe(2);
+  expect(store.val3).toBe('assigntest4');
+
+  expect(emissionSuccess).toBeTruthy();
 }
 
 function assignComputed() {
@@ -339,48 +336,48 @@ function assignComputed() {
     },
   });
 
-  store.name.should.equal('John Doe');
+  expect(store.name).toBe('John Doe');
   store.$assign({ name: 'Foo Bar' });
-  store.name.should.equal('Foo Bar');
+  expect(store.name).toBe('Foo Bar');
 }
 
 function keysOk() {
   const { parent } = makeParentChild();
   const keys = parent.$keys();
 
-  keys.length.should.equal(4);
-  (keys.indexOf('child') > -1).should.be.ok;
-  (keys.indexOf('bar') > -1).should.be.ok;
-  (keys.indexOf('baz') > -1).should.be.ok;
-  (keys.indexOf('two') > -1).should.be.ok;
+  expect(keys.length).toBe(4);
+  expect(keys.indexOf('child') > -1).toBeTruthy();
+  expect(keys.indexOf('bar') > -1).toBeTruthy();
+  expect(keys.indexOf('baz') > -1).toBeTruthy();
+  expect(keys.indexOf('two') > -1).toBeTruthy();
 }
 
 function valuesOk() {
   const { parent } = makeParentChild();
   const values = parent.$values();
 
-  values.length.should.equal(4);
+  expect(values.length).toBe(4);
 }
 
 function entriesOk() {
   const { parent } = makeParentChild();
   const entries = parent.$entries();
 
-  entries.length.should.equal(4);
+  expect(entries.length).toBe(4);
 }
 
 function copyOk() {
   const { parent } = makeParentChild();
   const copyEntries = Object.entries(parent.$copy());
 
-  parent.$entries().should.be.deep.equal(copyEntries);
+  expect(JSON.stringify(parent.$entries())).toBe(JSON.stringify(copyEntries));
 }
 
 function onEvents() {
   const store = createStore({});
 
   store.$on('test', fn);
-  store.$events.test[0].should.equal(fn);
+  expect(store.$events.test[0]).toBe(fn);
 }
 
 function onManyEvents() {
@@ -389,19 +386,19 @@ function onManyEvents() {
   store.$on('test', fn1);
   store.$on('test', fn2);
 
-  store.$events.test[0].should.equal(fn1);
-  store.$events.test[1].should.equal(fn2);
+  expect(store.$events.test[0]).toBe(fn1);
+  expect(store.$events.test[1]).toBe(fn2);
 }
 
 function onTriggerNewListner() {
   const store = createStore({});
 
   store.$emit = (name) => {
-    name.should.equal('newListener');
-    (!!store.$events.test).should.not.be.ok;
+    expect(name).toBe('newListener');
+    expect(!!store.$events.test).toBe(false);
     store.$emit = (name1) => {
-      name1.should.equal('test');
-      store.$events.test[0].should.equal(fn);
+      expect(name1).toBe('test');
+      expect(store.$events.test[0]).toBe(fn);
     };
   };
   store.$on('test', fn);
@@ -410,7 +407,7 @@ function onTriggerNewListner() {
 function onReturnInst() {
   const store = createStore({});
 
-  store.$on().$assign.should.be.ok;
+  expect(store.$on().$assign).toBeTruthy();
 }
 
 function offUnsubscribe() {
@@ -419,13 +416,13 @@ function offUnsubscribe() {
   store.$on('test', fn1);
   store.$on('test', fn2);
 
-  store.$events.test[0].should.equal(fn1);
-  store.$events.test[1].should.equal(fn2);
+  expect(store.$events.test[0]).toBe(fn1);
+  expect(store.$events.test[1]).toBe(fn2);
 
   store.$off('test', fn1);
 
-  store.$events.test.indexOf(fn1).should.equal(-1);
-  store.$events.test.indexOf(fn2).should.equal(0);
+  expect(store.$events.test.indexOf(fn1)).toBe(-1);
+  expect(store.$events.test.indexOf(fn2)).toBe(0);
 }
 
 function offEmitRemoveListner() {
@@ -434,17 +431,17 @@ function offEmitRemoveListner() {
 
   store.$on('test', fn);
   store.$on('removeListener', () => {
-    store.$events.test.length.should.be.falsy;
+    expect(store.$events.test.length).toBe(0);
     eventCalled = true;
   });
   store.$off('test', fn);
-  eventCalled.should.be.ok;
+  expect(eventCalled).toBe(true);
 }
 
 function offReturnInst() {
   const store = createStore({});
 
-  store.$off().$assign.should.be.ok;
+  expect(store.$off().$assign).toBeTruthy();
 }
 
 function onceSubscribe() {
@@ -452,26 +449,27 @@ function onceSubscribe() {
   let removed = false;
 
   store.$once('test', fn);
-  store.$events.test[0].should.equal(fn);
+  expect(store.$events.test[0]).toBe(fn);
 
   store.$on('removeListener', () => { removed = true; });
 
   store.$emit('test');
-  (!!store.$events.test[0]).should.not.be.ok;
-  removed.should.be.ok;
+
+  expect(!!store.$events.test[0]).toBe(false);
+  expect(removed).toBe(true);
 }
 
 function onceUnsubscribe() {
   const store = createStore({});
 
   store.$once('test', fn);
-  store.$events.test[0].should.equal(fn);
+  expect(store.$events.test[0]).toBe(fn);
 }
 
 function onceReturnInst() {
   const store = createStore({});
 
-  store.$once('test', fn).$assign.should.be.ok;
+  expect(store.$once('test', fn).$assign).toBeTruthy();
 }
 
 function emitTriggerAll() {
@@ -483,18 +481,18 @@ function emitTriggerAll() {
   store.$on('test', testfn1);
   store.$on('test', testfn2);
 
-  store.$events.test[0].should.equal(testfn1);
-  store.$events.test[1].should.equal(testfn2);
+  expect(store.$events.test[0]).toBe(testfn1);
+  expect(store.$events.test[1]).toBe(testfn2);
 
   store.$emit('test');
 
-  counter.should.equal(2);
+  expect(counter).toBe(2);
 }
 
 function emitReutrnInst() {
   const store = createStore({});
 
-  store.$emit().$assign.should.be.ok;
+  expect(store.$emit().$assign).toBeTruthy();
 }
 
 function pluginCall() {
@@ -502,17 +500,17 @@ function pluginCall() {
   plugins.push(() => { called = true; });
   createStore({});
   plugins.length = 0;
-  called.should.be.ok;
+
+  expect(called).toBe(true);
 }
 
 function pluginParams() {
   plugins.push((state, store, options) => {
-    state.should.be.an('object');
-    Object.keys(state).length.should.not.be.ok;
-    store.$assign.should.be.a('function');
-    store.test.should.be.a('function');
-    Object.keys(options).length.should.be.equal(1);
-    options.methods.test.should.be.a('function');
+    expect(typeof state).toBe('object');
+    expect(typeof store.$assign).toBe('function');
+    expect(typeof store.test).toBe('function');
+    expect(Object.keys(options).length).toBe(1);
+    expect(typeof options.methods.test).toBe('function');
   });
   createStore({ methods: { test() {} } });
   plugins.length = 0;
@@ -522,8 +520,8 @@ function pluginBeforSeal() {
   plugins.push((state, store) => { store.$foo = true; });
   const store = createStore({});
 
-  store.$foo.should.be.ok;
-  Object.isSealed(store).should.be.ok;
+  expect(store.$foo).toBe(true);
+  expect(Object.isSealed(store)).toBe(true);
 
   plugins.length = 0;
 }
@@ -533,8 +531,8 @@ function pluginsCall() {
   plugins.push((state, store) => { store.$bar = true; });
   const store = createStore({});
 
-  store.$foo.should.be.ok;
-  store.$bar.should.be.ok;
+  expect(store.$foo).toBe(true);
+  expect(store.$bar).toBe(true);
 
   plugins.length = 0;
 }

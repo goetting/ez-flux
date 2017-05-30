@@ -11,7 +11,7 @@
     "build:watch": "npm run build -- --watch",
     "build": "babel src --out-dir lib",
     "eslint:watch": "esw -w --cache --color --ext .js --ext .jsx ./src ./test",
-    "test": "mocha --require babel-polyfill --compilers js:babel-register",
+    "test": "jest",
     "test:watch": "npm run test -- --watch",
     "flow:watch": "nodemon -q --watch src --ext js -x 'flow; echo'"
   },
@@ -63,8 +63,6 @@
     "eslint-watch": "^3.1.0",
     "eventemitter3": "^2.0.2",
     "ez-flux": "^0.9.0",
-    "mocha": "^3.2.0",
-    "chai": "^3.5.0",
     "nodemon": "^1.11.0"
   }
 }

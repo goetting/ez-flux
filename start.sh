@@ -25,7 +25,7 @@ JOBS=(
   "npm run build:watch"
   "npm run eslint:watch"
   "npm run flow:watch"
-  "npm run test:watch"
+  #"npm run test:watch"
 )
 NAMES=" Babl , Lint , Flow , Test "
 COLORS="green,yellow,magenta,blue"
