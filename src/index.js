@@ -32,13 +32,13 @@ export const plugins: Plugin[] = [];
 
 export default function create(options: Options = {}): Store {
   const { methods, computed, children, immutable } = options;
-  const state: State = Object.assign({}, options.state);
+  const state: State = { ...options.state };
   const store: Store = {
     $events: {},
     $keys: () => Object.keys(state),
     $values: () => Object.values(state),
     $entries: () => Object.entries(state),
-    $copy: () => Object.assign({}, state),
+    $copy: () => ({ ...state }),
     $assign(...args: Object[]) {
       Object.assign(state, ...args);
       store.$emit('change');
@@ -85,7 +85,6 @@ export default function create(options: Options = {}): Store {
       cb(key, obj[key], i);
     }
   };
-
 
   loop(state, (key) => {
     define(store, key, {
