@@ -16,6 +16,7 @@ describe('store', () => {
     describe('methods', () => {
       it('should be added to the top level of the store', methodAdded);
       it('should be bound the namespace of the store', methodBound);
+      it('should throw an exception if a key on the state is already taken', keyTaken);
     });
 
     describe('computed', () => {
@@ -124,9 +125,7 @@ const makeParentChild = () => {
 };
 
 function spawns() {
-  const ez = getEZStore();
-
-  expect(ez).toBeTruthy();
+  expect(createStore()).toBeTruthy();
 }
 
 function gettersSettersOk() {
@@ -192,6 +191,21 @@ function methodBound() {
   ez.testMethod();
 
   expect(methodCalled).toBe(true);
+}
+
+function keyTaken() {
+  let threw = false;
+
+  try {
+    createStore({
+      state: { someVal: true },
+      methods: { someVal: () => {} },
+    });
+  } catch (e) {
+    threw = true;
+  }
+
+  expect(threw).toBe(true);
 }
 
 function computedOk() {
