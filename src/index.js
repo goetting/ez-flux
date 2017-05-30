@@ -1,230 +1,125 @@
 /* @flow */
-type EventNames = { triggered: string, change: string, canceled: string, reset: string };
-type Action = (
-  userData: any,
-  state: Object,
-  ezFlux: any,
-  actionName: string
-) => Promise<Object> | Object;
-type Actions = { [string]: Action };
-type ScopeConfig = {
-  values: Object,
-  actions: Actions,
-  beforeActions?: Action,
-  afterActions?: Action,
+type Key = string;
+type Value = any;
+type Callback = Function;
+type EventName = Key;
+type ObjectLoopFunction = (Key, Value, index: number) => void;
+type State = Object;
+type Store = {
+  $events: { [EventName]: Callback[] },
+  $keys: () => Key[],
+  $values: () => Value[],
+  $entries: () => [Key, Value][],
+  $assign: (...args: Object[]) => Store,
+  $emit: (EventName, ...any[]) => Store,
+  $on: (EventName, Callback) => Store,
+  $once: (EventName, Callback) => Store,
+  $off: (EventName, Callback) => Store,
 };
-type TriggerResolver = () => void;
-type StateConfig = { [name: string]: ScopeConfig };
-type ActionTrigger = (payload: any) => Promise<void>;
-type ActionTriggers = { [string]: ActionTrigger };
-type ActionListener = (payload: any, TriggerResolver) => void;
-type Config = {
-  console?: 'log' | 'trace' | 'error' | 'info' | '',
-  recordHistory?: boolean,
-  initialState?: Object,
-  plugins?: Function[]
+type Computed = { set?: Function, get?: Function };
+type Properties = Computed & { enumerable?: boolean, value?: any };
+type Options = {
+  state?: Object,
+  methods?: { [Key]: Function },
+  computed?: { [Key]: Properties },
+  children?: { [Key]: Store },
+  immutable?: boolean,
 };
-type HistoryEntry = { time: number, name: string, state: Object, payload: any };
-type History = { [time: number]: HistoryEntry };
+type Plugin = (State, Store, Options) => void;
 
-const colorMap: Object = { RESET: 'red', trigger: 'cyan', change: 'green' };
-const isFn = (fn): boolean => typeof fn === 'function';
+const define = Object.defineProperty;
+export const plugins: Plugin[] = [];
 
-export default class EZFlux {
-  static getEventNames(stateName: string, actionName: string = ''): EventNames {
-    return {
-      triggered: `triggered:action.${stateName}.${actionName}`,
-      canceled: `canceled:action.${stateName}.${actionName}`,
-      change: `change:state.${stateName}`,
-      reset: `RESET:state.${stateName}`,
-    };
-  }
-  static getActionCycle(action: Action, beforeActions?: Action, afterActions?: Action): Action[] {
-    const cycle: Action[] = [action];
-
-    if (beforeActions) cycle.push(beforeActions);
-    if (afterActions) cycle.unshift(afterActions);
-
-    return cycle;
-  }
-  static validateScope(
-    name: string,
-    { values, actions, afterActions, beforeActions }: ScopeConfig,
-  ): void {
-    if (!values || typeof values !== 'object') {
-      throw new Error(`ezFlux: "${name}" - must include a values object`);
-    }
-    if (!actions || Object.keys(actions).find(key => !isFn(actions[key]))) {
-      throw new Error(`ezFlux: "${name}" - actions must include dictionary of functions`);
-    }
-    if (afterActions && !isFn(afterActions)) {
-      throw new Error(`ezFlux: "${name}" - 'afterActions' must be a function or undefined`);
-    }
-    if (beforeActions && !isFn(beforeActions)) {
-      throw new Error(`ezFlux: "${name}" - 'beforeActions' must be a function or undefined`);
-    }
-  }
-
-  history: History = {};
-  config: Config = {};
-  runsInBrowser: boolean = typeof window !== 'undefined' && !!window.requestAnimationFrame;
-  actions: { [string]: ActionTriggers } = {};
-  emissionTimeout: any = null;
-  defaultState: Object = {};
-  state: Object = {};
-  events: { [string]: Function[] } = {};
-  removeListener = this.off;
-  plugins: Object = {};
-
-  constructor(stateCfg: StateConfig = {}, options: Config = {}) {
-    const scopeNames = Object.keys(stateCfg);
-    const initState = options.initialState || {};
-
-    this.config = options;
-
-    for (let i = scopeNames.length; i--;) {
-      const name = scopeNames[i];
-      const scopeConfig: ScopeConfig = stateCfg[name];
-
-      this.constructor.validateScope(name, scopeConfig);
-
-      this.state[name] = { ...scopeConfig.values };
-      this.defaultState[name] = { ...scopeConfig.values };
-      if (initState[name]) Object.assign(this.state[name], initState[name]);
-      Object.freeze(this.state[name]);
-
-      this.addScopeToEventSystem(name, scopeConfig);
-    }
-    Object.freeze(this.state);
-
-    if (options.plugins) {
-      for (let i = options.plugins.length; i--;) this.plug(options.plugins[i]);
-      delete this.config.plugins;
-    }
-  }
-
-  addScopeToEventSystem(scopeName: string, scopeConfig: ScopeConfig): void {
-    const actionNames = Object.keys(scopeConfig.actions);
-    const { beforeActions, afterActions, actions } = scopeConfig;
-
-    this.actions[scopeName] = {};
-
-    for (let i = actionNames.length; i--;) {
-      const actionName = actionNames[i];
-      const eventNames = this.constructor.getEventNames(scopeName, actionName);
-      const action = actions[actionName];
-      const actionCycle = this.constructor.getActionCycle(action, beforeActions, afterActions);
-      const listener = this.getActionListener(scopeName, actionName, actionCycle, eventNames);
-      const trigger = payload => new Promise(res => this.emit(eventNames.triggered, payload, res));      // eslint-disable-line no-loop-func
-
-      this.actions[scopeName][actionName] = trigger;
-      this.on(eventNames.triggered, listener);
-    }
-  }
-
-  getActionListener(
-    scopeName: string,
-    actionName: string,
-    actionCycle: Action[],
-    eventNames: EventNames,
-  ): ActionListener {
-    return (payload, res): void => {
-      let i = actionCycle.length - 1;
-      const stateChange = Object.seal({ ...this.state[scopeName] });
-      const runSeries = (actions, cb) => {
-        const result = actions[i](payload, stateChange, this, actionName);
-        const validateActionResult = (actionResult) => {
-          if (!actionResult || typeof actionResult !== 'object') {
-            cb(false);
-            return;
-          }
-          Object.assign(stateChange, actionResult);
-          i -= 1;
-          if (actions[i]) runSeries(actions, cb);
-          else cb(true);
-        };
-
-        if (!result || !result.then) validateActionResult(result);
-        else result.then(validateActionResult);
-      };
-
-      runSeries(actionCycle, (success) => {
-        if (success) {
-          this.setStateScope(scopeName, stateChange);
-          this.emit(eventNames.change);
-        } else {
-          this.emit(eventNames.canceled);
+export default function create(options: Options = {}): Store {
+  const { methods, computed, children, immutable } = options;
+  const state: State = Object.assign({}, options.state);
+  const store: Store = {
+    $events: {},
+    $keys: () => Object.keys(state),
+    $values: () => Object.values(state),
+    $entries: () => Object.entries(state),
+    $copy: () => Object.assign({}, state),
+    $assign(...args: Object[]) {
+      Object.assign(state, ...args);
+      store.$emit('change');
+      return store;
+    },
+    $emit(name = '', ...payload?: any[]) {
+      if (store.$events[name]) {
+        for (let i = store.$events[name].length; i--;) {
+          const fn = store.$events[name][i];
+          fn(...payload);
+          if (fn.$once) store.$off(name, fn);
         }
-        res();
-      });
-    };
-  }
+      }
+      return store;
+    },
+    $on(name, fn) {
+      store.$emit('newListener', name, fn);
+      if (!store.$events[name]) store.$events[name] = [fn];
+      else store.$events[name].push(fn);
+      return store;
+    },
+    $once(name, fn) {
+      fn.$once = true;                                                                                   // eslint-disable-line no-param-reassign
+      store.$on(name, fn);
+      return store;
+    },
+    $off(name, fn) {
+      if (store.$events[name]) {
+        const i = store.$events[name].indexOf(fn);
 
-  setStateScope(name: string, newState: Object): void {
-    this.state = { ...this.state };
-    this.state[name] = { ...newState };
-    Object.freeze(this.state);
-    Object.freeze(this.state[name]);
-  }
+        if (i > -1) store.$events[name].splice(i, 1);
+        store.$emit('removeListener', name, fn);
+      }
+      return store;
+    },
+  };
+  const loop = (obj?: Object, cb: ObjectLoopFunction): void => {
+    if (!obj) return;
+    const keys = Object.keys(obj);
+    for (let i = keys.length; i--;) {
+      const key = keys[i];
 
-  logEmission(name: string = '', payload?: any): void {
-    if (this.config.recordHistory) {
-      const time: number = Date.now();
-      const state = {};
-      const scopes = Object.keys(this.state);
-
-      for (let i = scopes.length; i--;) state[scopes[i]] = { ...this.state[scopes[i]] };
-
-      this.history[time] = { time, name, state, payload };
+      if (store[key]) throw new Error(`ezStore: key "${key}" already taken`);
+      cb(key, obj[key], i);
     }
+  };
 
-    if (this.config.console && console[this.config.console]) {                                      // eslint-disable-line no-console
-      const logger = console[this.config.console];                                                  // eslint-disable-line no-console
-      const msg: string = `ezFlux | ${name}`;
-      const color: string = colorMap[name.split(':')[0]] || 'gray';
-      logger(...(this.runsInBrowser ? [`%c${msg}`, `color:${color}`] : [msg]));
-    }
-  }
 
-  emit(name: string = '', payload?: any, resolver?: TriggerResolver) {
-    this.logEmission(name, payload);
-    if (!this.events[name]) return;
-    for (let i = this.events[name].length; i--;) this.events[name][i](payload, resolver);
-  }
-
-  on(name: string, fn: Function) {
-    if (!this.events[name]) this.events[name] = [fn];
-    else this.events[name].push(fn);
-  }
-
-  once(name: string, fn: Function) {
-    this.on(name, (...args: any[]) => {
-      fn(...args);
-      this.off(name, fn);
+  loop(state, (key) => {
+    define(store, key, {
+      enumerable: true,
+      get: () => state[key],
+      set: immutable ? undefined : (val) => {
+        store.$emit('change', store);
+        state[key] = val;
+      },
     });
-  }
+  });
 
-  off(name: string, fn: Function) {
-    if (!this.events[name]) return;
-    const i = this.events[name].findIndex(handler => handler === fn);
+  loop(methods, (key, method) => { store[key] = method.bind(store); });
 
-    if (i > -1) this.events[name].splice(i, 1);
-  }
+  loop(computed, (key, { get, set }: Computed) => {
+    const props: Properties = { enumerable: true };
 
-  resetStateScope(name: string): void {
-    if (!this.defaultState[name]) throw new Error(`ezFlux.reset: ${name} not found on state`);
-    this.setStateScope(name, this.defaultState[name]);
-    this.emit(this.constructor.getEventNames(name).reset);
-  }
+    if (typeof set === 'function') props.set = set.bind(store);
+    if (typeof get === 'function') props.get = get.bind(store);
+    define(store, key, props);
+    define(state, key, props);
+  });
 
-  resetState(): void {
-    const names = Object.keys(this.defaultState);
+  loop(children, (key, child: Store) => {
+    const props: Properties = { enumerable: true, value: child };
 
-    for (let i = names.length; i--;) this.resetStateScope(names[i]);
-  }
+    define(store, key, props);
+    define(state, key, props);
+    child.$on('change', () => store.$emit('change', store));
+  });
 
-  plug(fn: Function): void {
-    if (!isFn(fn)) throw new Error('ezFlux: plugin must be a function');
-    Object.assign(this.plugins, fn.apply(this));
-  }
+  if (plugins instanceof Array) plugins.forEach(plugin => plugin(state, store, options));
+  Object.seal(state);
+  Object.seal(store);
+  return store;
 }
+

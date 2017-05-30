@@ -22,13 +22,13 @@ printf '\e[1;34m%-6s\e[m' "
 "
 
 JOBS=(
-  "babel src --out-dir lib --watch"
-  "nodemon -q --watch src --ext js -x 'eslint --color --ext .js ./src; echo'"
-  "nodemon -q --watch src --ext js -x 'flow; echo'"
-  "jest --watchAll"
+  "npm run build:watch"
+  "npm run eslint:watch"
+  "npm run flow:watch"
+  "npm run test:watch"
 )
-NAMES="Babel,Lint,Flow,Test"
-COLORS="bgGreen.black,bgYellow.black,bgMagenta.black,bgBlue.black"
+NAMES=" Babl , Lint , Flow , Test "
+COLORS="green,yellow,magenta,blue"
 
 IFS='%'
 concurrently -k --prefix name --names "$NAMES" --prefix-colors "$COLORS" ${JOBS[*]}
