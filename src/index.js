@@ -30,7 +30,7 @@ type Plugin = (State, Store, Options) => void;
 const define = Object.defineProperty;
 export const plugins: Plugin[] = [];
 
-export default function create(options: Options = {}): Store {
+export function createStore(options: Options = {}): Store {
   const { methods, computed, children, immutable } = options;
   const state: State = { ...options.state };
   const store: Store = {

@@ -1,7 +1,7 @@
 # ezFlux
 
 
-ezFlux is a simple, tiny and focused flux implementation.  
+ezFlux is a simple, tiny and focused [flux](https://www.youtube.com/watch?list=PLb0IAmt7-GS188xDYE-u1ShQmFFGbrk0v&time_continue=621&v=nYkdrAPrdcw) implementation.  
 
 At its center is the application state, guarded by one or more stores.  
 A store implements a minimal event emitter that may be subscribed to.  
@@ -13,12 +13,12 @@ The resulting benefits are immense:
 - minimal brain load: no reducers, no dispatchers
 - minimal boiler plate: no unnecessary ceremony
 
-With improve run time, design time _and_ decreased package size, _ezFlux_ turns state management into a truely elegant, easy and fun experience!
+With improved run time, design time _and_ decreased package size, _ezFlux_ turns state management into a truely elegant, easy and fun experience!
 
 -   [Install](#install)
 -   [Usage](#usage)
     -   [Getting Started](#getting-started)
-    -   [Immutable State](#immutable-state)
+    -   [Immutable Store](#immutable-state)
     -   [Computed State](#computed-state)
     -   [Store Methods](#store-methods)
     -   [Store Nesting](#store-nesting)
@@ -53,7 +53,7 @@ This behaviour works great in small encapsulations.
 Stores are sealed by default.
 
 ```JS
-import createStore from 'ez-flux';
+import { createStore } from 'ez-flux';
 
 const user = createStore({
   state: { name: 'John Doe' },
@@ -69,7 +69,7 @@ user.name = 'Jane Doe';
 To assign multiple values without spamming events, $assign may be used.
 
 ```JS
-import createStore from 'ez-flux';
+import { createStore } from 'ez-flux';
 
 const user = createStore({
   state: { firstName: 'John', lastName: 'Doe' },
@@ -82,7 +82,7 @@ user.$assign({ firstName: 'Jane', lastName: 'Doeh'});
 // console outs 'Jane', 'Doeh';
 ```
 
-### Immutable State
+### Immutable Store
 
 Direct value assignment may be deactivated through the _immutable_ option.  
 $assign will become the only way to mutate the state of a store.  
@@ -90,9 +90,9 @@ This convention will result in better maintainability on large scale.
 
 
 ```JS
-import createStore from 'ez-flux';
+import { createStore } from 'ez-flux';
 
-const user = createStore({ 
+const user = createStore({
   state: { name: 'John Doe' },
   immutable: true,
 });
@@ -112,7 +112,7 @@ user.$assign({ name: 'Jane Doe' });
 You may define getters and/or setters directly.
 
 ```JS
-import createStore from 'ez-flux';
+import { createStore } from 'ez-flux';
 
 const user = createStore({
   state: {
@@ -145,7 +145,7 @@ user.$assign({ name: 'Jane Doe' });
 While _methods_ do seem alot like actions, there is no obligation to use $assign within them.
 
 ```JS
-import createStore from 'ez-flux';
+import { createStore } from 'ez-flux';
 
 const user = createStore({
   state: {
@@ -172,7 +172,7 @@ If a child changes, both the child and the parent will emit a change.
 If the parent changes, only it will emit a change.  
 
 ```JS
-import createStore from 'ez-flux';
+import { createStore } from 'ez-flux';
 
 const user = createStore({
   state: { name: 'John Doe' },
@@ -217,7 +217,6 @@ Creates a mutable projection of selected state values. It will have a one-way bi
 
 ### createStore
 
-createStore is exported as default.
 The store save-guards the state which consists of _state-option_ and _computed-option_.  
 In addition to its own API and the state keys, a store will hold all keys from the _methods-option_ and _children-option_ on the top level.
 
@@ -249,7 +248,7 @@ In addition to its own API and the state keys, a store will hold all keys from t
 
 ### Plugins
 
-The Plugins array is a non-default export.
+The Plugins array is exported for direct manipulation.
 
 ```TS
 type Plugin = (State, Store, Options) => void;

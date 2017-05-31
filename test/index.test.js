@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-expressions, no-use-before-define */
-import createStore, { plugins } from '../lib/index';
+import { createStore, plugins } from '../lib/index';
 
 require('chai').should();
 
