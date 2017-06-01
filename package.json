@@ -2,7 +2,7 @@
   "name": "ez-flux",
   "version": "0.11.0",
   "description": "an easy to use flux implementation",
-  "main": "./lib/ez-flux.js",
+  "main": "./lib/index.js",
   "scripts": {
     "start": "bash start.sh",
     "build": "babel src --out-dir lib",
@@ -42,7 +42,6 @@
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
     "babel-preset-latest": "^6.22.0",
     "concurrently": "^3.3.0",
-    "jest": "^19.0.2",
     "eslint-plugin-jest": "^19.0.1",
     "babel-register": "^6.24.1",
     "eslint": "3.13.1",
