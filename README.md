@@ -25,7 +25,7 @@ With improved run time, design time _and_ decreased package size, _ezFlux_ turns
 -   [Using Plugins](#using-plugins)
 -   [API Documentation](#api-documentation)
     -   [createStore](#createstore)
-    -   [Plugins](#plugins)
+    -   [Plugins and Addons](#plugins-and-addons)
 -   [Contributing](#contributing)
 
 # Install
@@ -196,19 +196,21 @@ session.user.$assign({ name: 'Jane Doe' });
 // console outs 'session changed'
 ```
 
-# Plugins
+# Plugins and Addons
+
+### Plugins
 
 [Plugins](#plugins) are an array of functions which is directly exported for you to edit.  
 They will be looped and execuded _after_ options have been handled and _before_ store and state are sealed.  
 As a result, plugins may extend or limit the scope of the created store.  
 
-[ezPlugins](https://github.com/goetting/ez-plugins) contains a number of useful examples:
+### Addons
 
-### /plugins/react
+#### [ezReact](https://github.com/goetting/ez-react)
 
 Useful if you wish to use ezFlux with [React](https://facebook.github.io/react/), [Inferno](https://infernojs.org/), [Preact](https://preactjs.com/) or any other react-compatible library:
 
-### /plugins/projector
+### [ezProjector](https://github.com/goetting/ez-projector)
 
 Creates a mutable projection of selected state values. It will have a one-way binding with the ezFlux state and update automatically if the state changes. This is useful for libraries that bind their behaviour directly to object mutation, such as [Vue](https://vuejs.org/).
 
