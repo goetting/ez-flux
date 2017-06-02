@@ -29,7 +29,6 @@ With improved run time, design time _and_ decreased package size, _ezFlux_ turns
 -   [Contributing](#contributing)
 
 # Install
-(WIP - NOT YET PUBLISHED)
 
 [NPM](https://npmjs.com):
 
