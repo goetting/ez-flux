@@ -9,6 +9,7 @@ describe('store', () => {
       it('should include getters and setters of the state options', gettersSettersOk);
       it('should the correct state values', gettersOk);
       it('should emit a state event on setting a values', settersOk);
+      it('should assign a given initialState object option if given', initStateOk);
     });
 
     describe('methods', () => {
@@ -176,6 +177,15 @@ function methodAdded() {
 
   ez.testMethod();
   expect(methodCalled).toBe(true);
+}
+
+function initStateOk() {
+  const creationState = { foo: 'foo', bar: 'bar' };
+  const initState = { foo: 'stuff', bar: 'moreStuff' };
+  const store = createStore({ state: creationState, initialState: initState });
+
+  expect(store.$copy()).not.toEqual(creationState);
+  expect(store.$copy()).toEqual(initState);
 }
 
 function methodBound() {

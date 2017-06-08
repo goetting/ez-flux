@@ -124,6 +124,8 @@ export function createStore(options: Options = {}): Store {
   Object.seal(state);
   Object.seal(store);
 
+  if (options.initialState) Object.assign(state, options.initialState);
+console.log(options.initialState);
   return store;
 }
 
