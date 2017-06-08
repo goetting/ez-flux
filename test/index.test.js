@@ -9,6 +9,9 @@ describe('store', () => {
       it('should include getters and setters of the state options', gettersSettersOk);
       it('should the correct state values', gettersOk);
       it('should emit a state event on setting a values', settersOk);
+    });
+
+    describe('initialState', () => {
       it('should assign a given initialState object option if given', initStateOk);
     });
 
@@ -181,8 +184,16 @@ function methodAdded() {
 
 function initStateOk() {
   const creationState = { foo: 'foo', bar: 'bar' };
-  const initState = { foo: 'stuff', bar: 'moreStuff' };
-  const store = createStore({ state: creationState, initialState: initState });
+  const initState = { foo: 'stuff', bar: 'moreStuff', baz: 'stuffmoreStuff' };
+  const store = createStore({
+    state: creationState,
+    initialState: initState,
+    computed: {
+      baz: {
+        get() { return this.foo + this.bar; },
+      },
+    },
+  });
 
   expect(store.$copy()).not.toEqual(creationState);
   expect(store.$copy()).toEqual(initState);

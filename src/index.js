@@ -102,6 +102,8 @@ export function createStore(options: Options = {}): Store {
 
   loop(methods, (key, method) => { store[key] = method.bind(store); });
 
+  if (options.initialState) Object.assign(state, options.initialState);
+
   loop(computed, (key, { get, set }: Computed) => {
     const props: Properties = { enumerable: true };
 
@@ -124,8 +126,6 @@ export function createStore(options: Options = {}): Store {
   Object.seal(state);
   Object.seal(store);
 
-  if (options.initialState) Object.assign(state, options.initialState);
-console.log(options.initialState);
   return store;
 }
 
