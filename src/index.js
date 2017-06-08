@@ -24,6 +24,7 @@ type Options = {
   computed?: { [Key]: Properties },
   children?: { [Key]: Store },
   immutable?: boolean,
+  initialState?: Object,
 };
 type Plugin = (State, Store, Options) => void;
 
@@ -33,12 +34,14 @@ export const plugins: Plugin[] = [];
 export function createStore(options: Options = {}): Store {
   const { methods, computed, children, immutable } = options;
   const state: State = { ...options.state };
+  const defaultState: State = { ...options.state };
   const store: Store = {
     $events: {},
     $keys: () => Object.keys(state),
     $values: () => Object.values(state),
     $entries: () => Object.entries(state),
     $copy: () => ({ ...state }),
+    $reset: () => store.$assign(defaultState),
     $assign(...args: Object[]) {
       Object.assign(state, ...args);
       store.$emit('change');
@@ -117,8 +120,10 @@ export function createStore(options: Options = {}): Store {
   });
 
   if (plugins instanceof Array) plugins.forEach(plugin => plugin(state, store, options));
+
   Object.seal(state);
   Object.seal(store);
+
   return store;
 }
 

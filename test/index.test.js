@@ -1,8 +1,6 @@
 /* eslint-disable no-unused-expressions, no-use-before-define */
 import { createStore, plugins } from '../lib/index';
 
-require('chai').should();
-
 describe('store', () => {
   it('should spawn without blowing up', spawns);
 
@@ -57,6 +55,10 @@ describe('store', () => {
 
     describe('$copy', () => {
       it('should return a shallow copy of the state', copyOk);
+    });
+
+    describe('$reset', () => {
+      it('should restore creation state and return the store', resetOk);
     });
   });
 
@@ -385,6 +387,18 @@ function copyOk() {
   const copyEntries = Object.entries(parent.$copy());
 
   expect(JSON.stringify(parent.$entries())).toBe(JSON.stringify(copyEntries));
+}
+
+function resetOk() {
+  const creationState = { foo: 'foo', bar: 'bar', baz: 'baz' };
+  const newState = { foo: 'stuff', bar: 'moreStuff', baz: 'evenMoreStuff' };
+  const store = createStore({ state: creationState });
+
+  store.$assign(newState);
+
+  expect(store.$copy()).toEqual(newState);
+  expect(typeof store.$reset().$on).toBe('function');
+  expect(store.$copy()).toEqual(creationState);
 }
 
 function onEvents() {
