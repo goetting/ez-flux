@@ -22,6 +22,7 @@ With improved run time, design time _and_ decreased package size, _ezFlux_ turns
     -   [Computed State](#computed-state)
     -   [Store Methods](#store-methods)
     -   [Store Nesting](#store-nesting)
+    -   [InitialState](#initialstate)
 -   [Using Plugins](#using-plugins)
 -   [API Documentation](#api-documentation)
     -   [createStore](#createstore)
@@ -195,6 +196,12 @@ session.user.$assign({ name: 'Jane Doe' });
 // console outs 'session changed'
 ```
 
+### InitialState
+
+The _initialState_ option is used to assign specific state values on store creation.  
+In contrast to the _state_ option, these values will not be restored when _store.$reset()_ is called.  
+This is useful for server side rendering szenarios, where a complete application state would have to be applied all at once.
+
 # Plugins and Addons
 
 ### Plugins
@@ -230,6 +237,7 @@ In addition to its own API and the state keys, a store will hold all keys from t
       methods?: { [string]: Function },
       children?: { [string]: Store },
       immutable?: boolen,
+      initialState?: Object,
     };
   ```
 **returns**
@@ -241,9 +249,11 @@ In addition to its own API and the state keys, a store will hold all keys from t
       $keys: () => string[],
       $values: () => any[],
       $entries: () => [string, any][],
+      $reset: () => Store,
       $on: (eventName: string, eventListener: Function) => Store,
       $once: (eventName: string, eventListener: Function) => Store,
       $off: (eventName: string, eventListener: Function) => Store,
+      $emit: (name: string, ...payload?: any[]) => Store,
     };
   ```
 

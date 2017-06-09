@@ -121,7 +121,6 @@ export function createStore(options: Options = {}): Store {
     define(state, key, props);
   });
 
-
   if (plugins instanceof Array) plugins.forEach(plugin => plugin(state, store, options));
 
   Object.seal(state);
