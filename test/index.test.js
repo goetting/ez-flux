@@ -11,10 +11,6 @@ describe('store', () => {
       it('should emit a state event on setting a values', settersOk);
     });
 
-    describe('initialState', () => {
-      it('should assign a given initialState object option if given', initStateOk);
-    });
-
     describe('methods', () => {
       it('should be added to the top level of the store', methodAdded);
       it('should be bound the namespace of the store', methodBound);
@@ -30,11 +26,17 @@ describe('store', () => {
       it('should add children', childOk);
       it('should not allow configuration of children', childrensNotConfigurable);
       it('should emit change if a child changes', emitChildChange);
+      it('assigning a value to a child on the parent will call $assign of the child', childAssign);
     });
 
     describe('immutable', () => {
       it('should ignore directly assigned values', immutableDirectly);
       it('should make $assign available only in methods', assignOnlyInMethods);
+    });
+
+    describe('initialState', () => {
+      it('should assign a given initialState object option if given', initStateOk);
+      it('should assign a nested initialState to children', initStateChildren);
     });
   });
 
@@ -199,6 +201,27 @@ function initStateOk() {
   expect(store.$copy()).toEqual(initState);
 }
 
+function initStateChildren() {
+  const child = createStore(getTestState());
+  const parent = createStore({
+    ...getTestState(),
+    children: { child },
+    initialState: {
+      val1: 11,
+      val2: 12,
+      val3: 13,
+      child: {
+        val1: 11,
+        val2: 12,
+        val3: 13,
+      },
+    },
+  });
+
+  expect(parent.$copy()).toMatchSnapshot();
+  expect(child.$copy()).toMatchSnapshot();
+}
+
 function methodBound() {
   let methodCalled = false;
   const ez = createStore({
@@ -288,6 +311,25 @@ function emitChildChange() {
 
   expect(parent.child.foo).toBe(false);
   expect(emitSuccess).toBe(true);
+}
+
+function childAssign() {
+  const assignState = {
+    bar: 1,
+    baz: true,
+    child: { foo: 2 },
+  };
+  const { parent, child } = makeParentChild();
+  let childEmissions = 0;
+  let parentEmissions = 0;
+
+  child.$on('change', () => childEmissions++);
+  parent.$on('change', () => parentEmissions++).$assign(assignState);
+
+  expect(childEmissions).toBe(1);
+  expect(parentEmissions).toBe(2);
+  expect(parent).toMatchSnapshot();
+  expect(child).toMatchSnapshot();
 }
 
 function immutableDirectly() {

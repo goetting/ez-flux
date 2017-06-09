@@ -102,6 +102,14 @@ export function createStore(options: Options = {}): Store {
 
   loop(methods, (key, method) => { store[key] = method.bind(store); });
 
+  loop(children, (key, child: Store) => {
+    const props: Properties = { enumerable: true, get: () => child, set: child.$assign };
+
+    define(store, key, props);
+    define(state, key, props);
+    child.$on('change', () => store.$emit('change', store));
+  });
+
   if (options.initialState) Object.assign(state, options.initialState);
 
   loop(computed, (key, { get, set }: Computed) => {
@@ -113,13 +121,6 @@ export function createStore(options: Options = {}): Store {
     define(state, key, props);
   });
 
-  loop(children, (key, child: Store) => {
-    const props: Properties = { enumerable: true, value: child };
-
-    define(store, key, props);
-    define(state, key, props);
-    child.$on('change', () => store.$emit('change', store));
-  });
 
   if (plugins instanceof Array) plugins.forEach(plugin => plugin(state, store, options));
 
