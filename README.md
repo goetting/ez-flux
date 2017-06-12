@@ -238,6 +238,7 @@ In addition to its own API and the state keys, a store will hold all keys from t
       children?: { [string]: Store },
       immutable?: boolen,
       initialState?: Object,
+      afterCreation: Function,
     };
   ```
 **returns**

@@ -38,6 +38,10 @@ describe('store', () => {
       it('should assign a given initialState object option if given', initStateOk);
       it('should assign a nested initialState to children', initStateChildren);
     });
+
+    describe('afterCreation', () => {
+      it('should call after creation when given', afterCreationOk);
+    });
   });
 
   describe('store methods', () => {
@@ -220,6 +224,21 @@ function initStateChildren() {
 
   expect(parent.$copy()).toMatchSnapshot();
   expect(child.$copy()).toMatchSnapshot();
+}
+
+function afterCreationOk() {
+  let called = false;
+
+  createStore({
+    state: { foo: 'bar' },
+    afterCreation() {
+      called = true;
+      expect(this.foo).toBe('bar');
+      expect(typeof this.$assign).toBe('function');
+    },
+  });
+
+  expect(called).toBe(true);
 }
 
 function methodBound() {

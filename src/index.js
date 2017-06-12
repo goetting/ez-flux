@@ -126,6 +126,8 @@ export function createStore(options: Options = {}): Store {
   Object.seal(state);
   Object.seal(store);
 
+  if (typeof options.afterCreation === 'function') options.afterCreation.apply(store);
+
   return store;
 }
 
