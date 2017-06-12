@@ -44,7 +44,7 @@ export function createStore(options: Options = {}): Store {
     $reset: () => store.$assign(defaultState),
     $assign(...args: Object[]) {
       Object.assign(state, ...args);
-      store.$emit('change');
+      store.$emit('change', store);
       return store;
     },
     $emit(name = '', ...payload?: any[]) {

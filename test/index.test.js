@@ -43,7 +43,7 @@ describe('store', () => {
   describe('store methods', () => {
     describe('$assign', () => {
       it('should add any values from any number of objects to state', assignOk);
-      it('should emit change after assigning to state', assignEmit);
+      it('should emit change after assigning to state - calling handlers with store', assignEmit);
       it('should use computed setters propperly', assignComputed);
     });
 
@@ -385,7 +385,10 @@ function assignEmit() {
   const testObj2 = { val1: 'assigntest3', val3: 'assigntest4' };
   let emissionSuccess = false;
 
-  store.$once('change', () => { emissionSuccess = true; });
+  store.$once('change', (storeParam) => {
+    expect(storeParam).toBe(store);
+    emissionSuccess = true;
+  });
   store.$assign(testObj2);
 
   expect(store.val1).toBe('assigntest3');
