@@ -51,8 +51,12 @@ export function createStore(options: Options = {}): Store {
       if (store.$events[name]) {
         for (let i = store.$events[name].length; i--;) {
           const fn = store.$events[name][i];
-          fn(...payload);
-          if (fn.$once) store.$off(name, fn);
+          if (typeof fn === 'function') {
+            fn(...payload);
+            if (fn.$once) store.$off(name, fn);
+          } else {
+            store.$off(name, fn);
+          }
         }
       }
       return store;
