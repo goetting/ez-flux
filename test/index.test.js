@@ -20,6 +20,7 @@ describe('store', () => {
     describe('computed', () => {
       it('should be added to the top level of the store', computedOk);
       it('should bind scope to setter if given', computedBound);
+      it('should default to empty get/set functions', computedDefault);
     });
 
     describe('children', () => {
@@ -299,6 +300,24 @@ function computedBound() {
   expect(ez.test).toBe('bar');
   ez.test = 'foo';
   expect(ez.test).toBe('baz');
+}
+
+function computedDefault() {
+  const ez = createStore({
+    state: {
+      foo: 'bar',
+    },
+    computed: {
+      test: {
+        get() { return this.foo; },
+      },
+      test2: {
+        set() { this.foo = 'baz'; },
+      },
+    },
+  });
+  expect(typeof Object.getOwnPropertyDescriptor(ez, 'test').set).toBe('function');
+  expect(typeof Object.getOwnPropertyDescriptor(ez, 'test').get).toBe('function');
 }
 
 function childOk() {

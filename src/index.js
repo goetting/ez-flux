@@ -119,8 +119,8 @@ export function createStore(options: Options = {}): Store {
   loop(computed, (key, { get, set }: Computed) => {
     const props: Properties = { enumerable: true };
 
-    if (typeof set === 'function') props.set = set.bind(store);
-    if (typeof get === 'function') props.get = get.bind(store);
+    props.set = typeof set === 'function' ? set.bind(store) : () => {};
+    props.get = typeof get === 'function' ? get.bind(store) : () => {};
     define(store, key, props);
     define(state, key, props);
   });
