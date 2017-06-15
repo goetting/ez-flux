@@ -196,6 +196,12 @@ session.user.$assign({ name: 'Jane Doe' });
 // console outs 'session changed'
 ```
 
+Please note that a store's children will be impacted by methods called on the parent:
+-   parent.$assign: will call $assign on any child that is mentionend in the object assigned to the parent.
+-   parent.$copy: will invoke $copy on all children in order to return a full copy.  
+Attention: It will not deep clone any other nested states.
+-   parent.$reset: will invoke $reset on all children.
+
 ### InitialState
 
 The _initialState_ option is used to assign specific state values on store creation.  
@@ -249,6 +255,7 @@ In addition to its own API and the state keys, a store will hold all keys from t
       $copy: () => Object,
       $keys: () => string[],
       $values: () => any[],
+      $stringify: () => string,
       $entries: () => [string, any][],
       $reset: () => Store,
       $on: (eventName: string, eventListener: Function) => Store,
