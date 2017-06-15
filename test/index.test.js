@@ -75,7 +75,7 @@ describe('store', () => {
     });
 
     describe('$stringify', () => {
-      it('should JSON.stringify a $copy of a the state', resetOk);
+      it('should JSON.stringify a $copy of a the state', stringifyOk);
     });
   });
 
@@ -539,7 +539,7 @@ function resetChildren() {
   expect(parent.$reset().$copy()).toEqual(defaultState);
 }
 
-function resetOk() {
+function stringifyOk() {
   const child = createStore({ state: { bar: true } });
   const parent = createStore({ state: { baz: 'baz' }, children: { child } });
   const stateString = JSON.stringify(parent.$copy());
