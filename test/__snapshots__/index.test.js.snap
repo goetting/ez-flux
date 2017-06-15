@@ -88,3 +88,82 @@ Object {
   "val3": 13,
 }
 `;
+
+exports[`store store methods $copy should invoke copy on their children as well 1`] = `
+Object {
+  "$assign": [Function],
+  "$copy": [Function],
+  "$emit": [Function],
+  "$entries": [Function],
+  "$events": Object {},
+  "$keys": [Function],
+  "$off": [Function],
+  "$on": [Function],
+  "$once": [Function],
+  "$reset": [Function],
+  "$stringify": [Function],
+  "$values": [Function],
+  "baz": "baz",
+  "child": Object {
+    "$assign": [Function],
+    "$copy": [Function],
+    "$emit": [Function],
+    "$entries": [Function],
+    "$events": Object {
+      "change": Array [
+        [Function],
+      ],
+    },
+    "$keys": [Function],
+    "$off": [Function],
+    "$on": [Function],
+    "$once": [Function],
+    "$reset": [Function],
+    "$stringify": [Function],
+    "$values": [Function],
+    "bar": true,
+    "deepChild": Object {
+      "$assign": [Function],
+      "$copy": [Function],
+      "$emit": [Function],
+      "$entries": [Function],
+      "$events": Object {
+        "change": Array [
+          [Function],
+        ],
+      },
+      "$keys": [Function],
+      "$off": [Function],
+      "$on": [Function],
+      "$once": [Function],
+      "$reset": [Function],
+      "$stringify": [Function],
+      "$values": [Function],
+      "foo": true,
+    },
+  },
+}
+`;
+
+exports[`store store methods $copy should return a shallow copy of the state 1`] = `
+Object {
+  "bar": "bar",
+  "baz": true,
+  "child": Object {
+    "foo": true,
+  },
+  "two": undefined,
+}
+`;
+
+exports[`store store methods $reset should callReset on its children as well 1`] = `
+Object {
+  "baz": 1,
+  "child": Object {
+    "bar": 1,
+    "deepChild": Object {
+      "foo": 1,
+    },
+  },
+}
+`;

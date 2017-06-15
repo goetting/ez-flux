@@ -66,10 +66,16 @@ describe('store', () => {
 
     describe('$copy', () => {
       it('should return a shallow copy of the state', copyOk);
+      it('should invoke copy on their children as well', copyChildren);
     });
 
     describe('$reset', () => {
       it('should restore creation state and return the store', resetOk);
+      it('should callReset on its children as well', resetChildren);
+    });
+
+    describe('$stringify', () => {
+      it('should JSON.stringify a $copy of a the state', resetOk);
     });
   });
 
@@ -488,9 +494,16 @@ function entriesOk() {
 
 function copyOk() {
   const { parent } = makeParentChild();
-  const copyEntries = Object.entries(parent.$copy());
 
-  expect(JSON.stringify(parent.$entries())).toBe(JSON.stringify(copyEntries));
+  expect(parent.$copy()).toMatchSnapshot();
+}
+
+function copyChildren() {
+  const deepChild = createStore({ state: { foo: true } });
+  const child = createStore({ state: { bar: true }, children: { deepChild } });
+  const parent = createStore({ state: { baz: 'baz' }, children: { child } });
+
+  expect(parent).toMatchSnapshot();
 }
 
 function resetOk() {
@@ -503,6 +516,35 @@ function resetOk() {
   expect(store.$copy()).toEqual(newState);
   expect(typeof store.$reset().$on).toBe('function');
   expect(store.$copy()).toEqual(creationState);
+}
+
+function resetChildren() {
+  const deepChild = createStore({ state: { foo: true } });
+  const child = createStore({ state: { bar: true }, children: { deepChild } });
+  const parent = createStore({ state: { baz: 'baz' }, children: { child } });
+
+  const defaultState = parent.$copy();
+
+  parent.$assign({
+    baz: 1,
+    child: {
+      bar: 1,
+      deepChild: {
+        foo: 1,
+      },
+    },
+  });
+
+  expect(parent.$copy()).toMatchSnapshot();
+  expect(parent.$reset().$copy()).toEqual(defaultState);
+}
+
+function resetOk() {
+  const child = createStore({ state: { bar: true } });
+  const parent = createStore({ state: { baz: 'baz' }, children: { child } });
+  const stateString = JSON.stringify(parent.$copy());
+
+  expect(parent.$stringify()).toEqual(stateString);
 }
 
 function onEvents() {
