@@ -10,6 +10,9 @@ type Store = {
   $keys: () => Key[],
   $values: () => Value[],
   $entries: () => [Key, Value][],
+  $stringify: () => string,
+  $copy: () => Object,
+  $reset: () => Store,
   $assign: (...args: Object[]) => Store,
   $emit: (EventName, ...any[]) => Store,
   $on: (EventName, Callback) => Store,
@@ -33,6 +36,8 @@ export const plugins: Plugin[] = [];
 
 export function createStore(options: Options = {}): Store {
   const { methods, computed, children, immutable } = options;
+  const childList = [];
+  const childCopies = {};
   const state: State = { ...options.state };
   const defaultState: State = { ...options.state };
   const store: Store = {
@@ -40,8 +45,12 @@ export function createStore(options: Options = {}): Store {
     $keys: () => Object.keys(state),
     $values: () => Object.values(state),
     $entries: () => Object.entries(state),
-    $copy: () => ({ ...state }),
-    $reset: () => store.$assign(defaultState),
+    $copy: () => ({ ...state, ...childCopies }),
+    $stringify: () => JSON.stringify(store.$copy()),
+    $reset: () => {
+      childList.forEach(child => child.$reset());
+      return store.$assign(defaultState);
+    },
     $assign(...args: Object[]) {
       Object.assign(state, ...args);
       store.$emit('change', store);
@@ -106,12 +115,16 @@ export function createStore(options: Options = {}): Store {
 
   loop(methods, (key, method) => { store[key] = method.bind(store); });
 
-  loop(children, (key, child: Store) => {
+  Object.entries(children || {}).forEach(([key, child]: [string, Store | any]) => {
+    if (store[key]) throw new Error(`ezStore: key "${key}" already taken`);
+
     const props: Properties = { enumerable: true, get: () => child, set: child.$assign };
 
+    child.$on('change', () => store.$emit('change', store));
     define(store, key, props);
     define(state, key, props);
-    child.$on('change', () => store.$emit('change', store));
+    define(childCopies, key, { enumerable: true, get: () => child.$copy() });
+    childList.push(child);
   });
 
   if (options.initialState) Object.assign(state, options.initialState);

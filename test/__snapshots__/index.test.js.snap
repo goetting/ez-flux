@@ -16,6 +16,7 @@ Object {
   "$on": [Function],
   "$once": [Function],
   "$reset": [Function],
+  "$stringify": [Function],
   "$values": [Function],
   "bar": 1,
   "baz": true,
@@ -35,6 +36,7 @@ Object {
     "$on": [Function],
     "$once": [Function],
     "$reset": [Function],
+    "$stringify": [Function],
     "$values": [Function],
     "foo": 2,
   },
@@ -60,6 +62,7 @@ Object {
   "$on": [Function],
   "$once": [Function],
   "$reset": [Function],
+  "$stringify": [Function],
   "$values": [Function],
   "foo": 2,
 }
@@ -68,21 +71,6 @@ Object {
 exports[`store options initialState should assign a nested initialState to children 1`] = `
 Object {
   "child": Object {
-    "$assign": [Function],
-    "$copy": [Function],
-    "$emit": [Function],
-    "$entries": [Function],
-    "$events": Object {
-      "change": Array [
-        [Function],
-      ],
-    },
-    "$keys": [Function],
-    "$off": [Function],
-    "$on": [Function],
-    "$once": [Function],
-    "$reset": [Function],
-    "$values": [Function],
     "val1": 11,
     "val2": 12,
     "val3": 13,
