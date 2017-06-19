@@ -16,6 +16,7 @@
   'parser': 'babel-eslint',
   'globals': {
     'expect': true,
+    'afterEach': true,
     'it': true,
     'describe': true,
   },

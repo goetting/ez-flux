@@ -1,0 +1,138 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`debug plugin debug should log child events differently 1`] = `
+Object {
+  "childName": "child",
+  "eventType": "child change",
+  "state": Object {
+    "bar": "baz",
+    "child": Object {
+      "foo": "baz",
+    },
+  },
+  "store": Object {
+    "$assign": [Function],
+    "$copy": [Function],
+    "$emit": [Function],
+    "$entries": [Function],
+    "$events": Object {
+      "change": Array [
+        [Function],
+      ],
+    },
+    "$keys": [Function],
+    "$off": [Function],
+    "$on": [Function],
+    "$once": [Function],
+    "$reset": [Function],
+    "$values": [Function],
+    "bar": "baz",
+    "child": Object {
+      "$assign": [Function],
+      "$copy": [Function],
+      "$emit": [Function],
+      "$entries": [Function],
+      "$events": Object {
+        "change": Array [
+          [Function],
+          [Function],
+        ],
+      },
+      "$keys": [Function],
+      "$off": [Function],
+      "$on": [Function],
+      "$once": [Function],
+      "$reset": [Function],
+      "$values": [Function],
+      "foo": "baz",
+    },
+  },
+  "storeName": "parent",
+}
+`;
+
+exports[`debug plugin debug should log child events differently 2`] = `
+Object {
+  "childName": undefined,
+  "eventType": "state change",
+  "state": Object {
+    "foo": "baz",
+  },
+  "store": Object {
+    "$assign": [Function],
+    "$copy": [Function],
+    "$emit": [Function],
+    "$entries": [Function],
+    "$events": Object {
+      "change": Array [
+        [Function],
+        [Function],
+      ],
+    },
+    "$keys": [Function],
+    "$off": [Function],
+    "$on": [Function],
+    "$once": [Function],
+    "$reset": [Function],
+    "$values": [Function],
+    "foo": "baz",
+  },
+  "storeName": "child",
+}
+`;
+
+exports[`debug plugin debug should subscribe to and log a change event 1`] = `
+Object {
+  "childName": undefined,
+  "eventType": "state change",
+  "state": Object {
+    "foo": "bar",
+  },
+  "store": Object {
+    "$assign": [Function],
+    "$copy": [Function],
+    "$emit": [Function],
+    "$entries": [Function],
+    "$events": Object {
+      "change": Array [
+        [Function],
+      ],
+    },
+    "$keys": [Function],
+    "$off": [Function],
+    "$on": [Function],
+    "$once": [Function],
+    "$reset": [Function],
+    "$values": [Function],
+    "foo": "bar",
+  },
+  "storeName": "store",
+}
+`;
+
+exports[`debug plugin debug should wrap optional methods 1`] = `
+Object {
+  "eventType": "method called",
+  "methodName": "someMethod",
+  "state": Object {},
+  "store": Object {
+    "$assign": [Function],
+    "$copy": [Function],
+    "$emit": [Function],
+    "$entries": [Function],
+    "$events": Object {
+      "change": Array [
+        [Function],
+      ],
+    },
+    "$keys": [Function],
+    "$off": [Function],
+    "$on": [Function],
+    "$once": [Function],
+    "$reset": [Function],
+    "$values": [Function],
+    "someMethod": [Function],
+  },
+  "storeName": "store",
+}
+`;

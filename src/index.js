@@ -4,8 +4,8 @@ type Value = any;
 type Callback = Function;
 type EventName = Key;
 type ObjectLoopFunction = (Key, Value, index: number) => void;
-type State = Object;
-type Store = {
+export type State = Object;
+export type Store = {
   $events: { [EventName]: Callback[] },
   $keys: () => Key[],
   $values: () => Value[],
@@ -20,7 +20,8 @@ type Store = {
 };
 type Computed = { set?: Function, get?: Function };
 type Properties = Computed & { enumerable?: boolean, value?: any };
-type Options = {
+export type Options = {
+  name?: string,
   state?: Object,
   methods?: { [Key]: Function },
   computed?: { [Key]: Properties },
@@ -139,4 +140,3 @@ export function createStore(options: Options = {}): Store {
 
   return store;
 }
-
