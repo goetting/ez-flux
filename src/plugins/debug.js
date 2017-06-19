@@ -2,7 +2,7 @@
 import type { Store, State, Options } from '../index';
 
 type DebugPayload = {
-  eventType: string,
+  eventType: 'state change' | 'child change' | 'method called',
   storeName: string,
   childName?: string,
   methodName?: string,
@@ -10,8 +10,8 @@ type DebugPayload = {
   state: Object,
 };
 
-export default function getDebugger(cb: DebugPayload => void) {
-  if (typeof cb !== 'function') throw new Error('getDebugger was called without callback');
+export default function createDebugger(cb: DebugPayload => void) {
+  if (typeof cb !== 'function') throw new Error('createDebugger was called without callback');
 
   return (state: State, store: Store, { name: storeName = '' }: Options) => {
     if (!storeName) throw new Error('ezFlux debugger: Store name was not given.');

@@ -1,11 +1,11 @@
 /* eslint-disable no-unused-expressions, no-use-before-define */
 import { createStore, plugins } from '../../lib/index';
-import getDebugger from '../../lib/plugins/debug';
+import createDebugger from '../../lib/plugins/debug';
 
 describe('debug plugin', () => {
   afterEach(() => { plugins.length = 0; });
 
-  describe('getDebugger', () => {
+  describe('createDebugger', () => {
     it('should throw if first arg is not a function', noCB);
     it('should create a pluggable function', returnsFn);
   });
@@ -22,7 +22,7 @@ describe('debug plugin', () => {
 function noCB() {
   let err = null;
   try {
-    getDebugger();
+    createDebugger();
   } catch (e) {
     err = e;
   }
@@ -30,13 +30,13 @@ function noCB() {
 }
 
 function returnsFn() {
-  expect(typeof getDebugger(() => {})).toBe('function');
+  expect(typeof createDebugger(() => {})).toBe('function');
 }
 
 function noName() {
   let err = null;
   try {
-    plugins.push(getDebugger(() => {}));
+    plugins.push(createDebugger(() => {}));
     const store = createStore({});
 
     store.$emit('change');
@@ -49,7 +49,7 @@ function noName() {
 function leaveNative() {
   let cbCount = 0;
 
-  plugins.push(getDebugger((payload) => {
+  plugins.push(createDebugger((payload) => {
     if (payload.eventType === 'method called') cbCount++;
   }));
 
@@ -62,7 +62,7 @@ function leaveNative() {
 function logMethod() {
   let cbCount = 0;
 
-  plugins.push(getDebugger((payload) => {
+  plugins.push(createDebugger((payload) => {
     cbCount++;
     expect(payload).toMatchSnapshot();
   }));
@@ -76,7 +76,7 @@ function logMethod() {
 function logChange() {
   let cbCount = 0;
 
-  plugins.push(getDebugger((payload) => {
+  plugins.push(createDebugger((payload) => {
     cbCount++;
     expect(payload).toMatchSnapshot();
   }));
@@ -90,7 +90,7 @@ function logChange() {
 function logChild() {
   let cbCount = 0;
 
-  plugins.push(getDebugger((payload) => {
+  plugins.push(createDebugger((payload) => {
     cbCount++;
     expect(payload).toMatchSnapshot();
   }));

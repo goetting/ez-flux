@@ -209,6 +209,32 @@ Attention: It will not deep clone any other nested states.
 They will be looped and execuded _after_ options have been handled and _before_ store and state are sealed.  
 As a result, plugins may extend or limit the scope of the created store.  
 
+#### debug
+
+The debug plugin is created by passing a callback to _createDebugger_.
+
+```JS
+import { plugins } from 'ez-flux';
+import { createDebugger } from 'ez-flux/plugins/debug';
+
+const debug = createDebugger(payload => console.log(payload));
+
+plugins.push(debug);
+```
+
+Now, the given callback will be called on specific interactions:
+
+```TS
+type DebugPayload = {
+  eventType: 'state change' | 'child change' | 'method called',
+  storeName: string,
+  childName?: string,
+  methodName?: string,
+  store: Store,
+  state: Object,
+};
+```
+
 ### Addons
 
 #### [ezReact](https://github.com/goetting/ez-react)
