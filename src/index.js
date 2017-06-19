@@ -88,14 +88,13 @@ export function createStore(options: Options = {}): Store {
       return store;
     },
   };
-  const isTaken = (key) => { if (store[key]) throw new Error(`key "${key}" already taken`); };
   const loop = (obj?: Object, cb: ObjectLoopFunction): void => {
     if (!obj) return;
     const keys = Object.keys(obj);
     for (let i = keys.length; i--;) {
       const key = keys[i];
 
-      isTaken(key);
+      if (store[key]) throw new Error(`key "${key}" already taken`);
       cb(key, obj[key], i);
     }
   };
@@ -113,9 +112,7 @@ export function createStore(options: Options = {}): Store {
 
   loop(methods, (key, method) => { store[key] = method.bind(store); });
 
-  Object.entries(children || {}).forEach(([key, child]: [string, Store | any]) => {
-    isTaken(key);
-
+  loop(children, (key, child) => {
     const props: Properties = { enumerable: true, get: () => child, set: child.$assign };
 
     child.$on('change', () => store.$emit('change', store, key));
