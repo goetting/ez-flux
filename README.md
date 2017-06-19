@@ -22,7 +22,6 @@ With improved run time, design time _and_ decreased package size, _ezFlux_ turns
     -   [Computed State](#computed-state)
     -   [Store Methods](#store-methods)
     -   [Store Nesting](#store-nesting)
-    -   [InitialState](#initialstate)
 -   [Using Plugins](#using-plugins)
 -   [API Documentation](#api-documentation)
     -   [createStore](#createstore)
@@ -202,12 +201,6 @@ Please note that a store's children will be impacted by methods called on the pa
 Attention: It will not deep clone any other nested states.
 -   parent.$reset: will invoke $reset on all children.
 
-### InitialState
-
-The _initialState_ option is used to assign specific state values on store creation.  
-In contrast to the _state_ option, these values will not be restored when _store.$reset()_ is called.  
-This is useful for server side rendering szenarios, where a complete application state would have to be applied all at once.
-
 # Plugins and Addons
 
 ### Plugins
@@ -243,7 +236,6 @@ In addition to its own API and the state keys, a store will hold all keys from t
       methods?: { [string]: Function },
       children?: { [string]: Store },
       immutable?: boolen,
-      initialState?: Object,
       afterCreation: Function,
     };
   ```

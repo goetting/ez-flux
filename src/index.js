@@ -27,7 +27,7 @@ type Options = {
   computed?: { [Key]: Properties },
   children?: { [Key]: Store },
   immutable?: boolean,
-  initialState?: Object,
+  afterCreation?: () => void,
 };
 type Plugin = (State, Store, Options) => void;
 
@@ -35,8 +35,7 @@ const define = Object.defineProperty;
 export const plugins: Plugin[] = [];
 
 export function createStore(options: Options = {}): Store {
-  const { methods, computed, children, immutable } = options;
-  const childList = [];
+  const { methods, computed, children, immutable, afterCreation } = options;
   const childCopies = {};
   const state: State = { ...options.state };
   const defaultState: State = { ...options.state };
@@ -48,7 +47,7 @@ export function createStore(options: Options = {}): Store {
     $copy: () => ({ ...state, ...childCopies }),
     $stringify: () => JSON.stringify(store.$copy()),
     $reset: () => {
-      childList.forEach(child => child.$reset());
+      Object.values(children || {}).forEach((child: any) => child.$reset());
       return store.$assign(defaultState);
     },
     $assign(...args: Object[]) {
@@ -91,13 +90,14 @@ export function createStore(options: Options = {}): Store {
       return store;
     },
   };
+  const isTaken = (key) => { if (store[key]) throw new Error(`key "${key}" already taken`); };
   const loop = (obj?: Object, cb: ObjectLoopFunction): void => {
     if (!obj) return;
     const keys = Object.keys(obj);
     for (let i = keys.length; i--;) {
       const key = keys[i];
 
-      if (store[key]) throw new Error(`ezStore: key "${key}" already taken`);
+      isTaken(key);
       cb(key, obj[key], i);
     }
   };
@@ -116,18 +116,15 @@ export function createStore(options: Options = {}): Store {
   loop(methods, (key, method) => { store[key] = method.bind(store); });
 
   Object.entries(children || {}).forEach(([key, child]: [string, Store | any]) => {
-    if (store[key]) throw new Error(`ezStore: key "${key}" already taken`);
+    isTaken(key);
 
     const props: Properties = { enumerable: true, get: () => child, set: child.$assign };
 
-    child.$on('change', () => store.$emit('change', store));
+    child.$on('change', () => store.$emit('change', store, key));
     define(store, key, props);
     define(state, key, props);
     define(childCopies, key, { enumerable: true, get: () => child.$copy() });
-    childList.push(child);
   });
-
-  if (options.initialState) Object.assign(state, options.initialState);
 
   loop(computed, (key, { get, set }: Computed) => {
     const props: Properties = { enumerable: true };
@@ -143,7 +140,7 @@ export function createStore(options: Options = {}): Store {
   Object.seal(state);
   Object.seal(store);
 
-  if (typeof options.afterCreation === 'function') options.afterCreation.apply(store);
+  if (typeof afterCreation === 'function') afterCreation.apply(store);
 
   return store;
 }

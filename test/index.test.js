@@ -35,11 +35,6 @@ describe('store', () => {
       it('should make $assign available only in methods', assignOnlyInMethods);
     });
 
-    describe('initialState', () => {
-      it('should assign a given initialState object option if given', initStateOk);
-      it('should assign a nested initialState to children', initStateChildren);
-    });
-
     describe('afterCreation', () => {
       it('should call after creation when given', afterCreationOk);
     });
@@ -193,44 +188,6 @@ function methodAdded() {
 
   ez.testMethod();
   expect(methodCalled).toBe(true);
-}
-
-function initStateOk() {
-  const creationState = { foo: 'foo', bar: 'bar' };
-  const initState = { foo: 'stuff', bar: 'moreStuff', baz: 'stuffmoreStuff' };
-  const store = createStore({
-    state: creationState,
-    initialState: initState,
-    computed: {
-      baz: {
-        get() { return this.foo + this.bar; },
-      },
-    },
-  });
-
-  expect(store.$copy()).not.toEqual(creationState);
-  expect(store.$copy()).toEqual(initState);
-}
-
-function initStateChildren() {
-  const child = createStore(getTestState());
-  const parent = createStore({
-    ...getTestState(),
-    children: { child },
-    initialState: {
-      val1: 11,
-      val2: 12,
-      val3: 13,
-      child: {
-        val1: 11,
-        val2: 12,
-        val3: 13,
-      },
-    },
-  });
-
-  expect(parent.$copy()).toMatchSnapshot();
-  expect(child.$copy()).toMatchSnapshot();
 }
 
 function afterCreationOk() {
