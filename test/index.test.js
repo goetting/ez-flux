@@ -68,10 +68,6 @@ describe('store', () => {
       it('should restore creation state and return the store', resetOk);
       it('should callReset on its children as well', resetChildren);
     });
-
-    describe('$stringify', () => {
-      it('should JSON.stringify a $copy of a the state', stringifyOk);
-    });
   });
 
   describe('Store Emitter', () => {
@@ -494,14 +490,6 @@ function resetChildren() {
 
   expect(parent.$copy()).toMatchSnapshot();
   expect(parent.$reset().$copy()).toEqual(defaultState);
-}
-
-function stringifyOk() {
-  const child = createStore({ state: { bar: true } });
-  const parent = createStore({ state: { baz: 'baz' }, children: { child } });
-  const stateString = JSON.stringify(parent.$copy());
-
-  expect(parent.$stringify()).toEqual(stateString);
 }
 
 function onEvents() {

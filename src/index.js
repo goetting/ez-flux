@@ -10,7 +10,6 @@ type Store = {
   $keys: () => Key[],
   $values: () => Value[],
   $entries: () => [Key, Value][],
-  $stringify: () => string,
   $copy: () => Object,
   $reset: () => Store,
   $assign: (...args: Object[]) => Store,
@@ -45,7 +44,6 @@ export function createStore(options: Options = {}): Store {
     $values: () => Object.values(state),
     $entries: () => Object.entries(state),
     $copy: () => ({ ...state, ...childCopies }),
-    $stringify: () => JSON.stringify(store.$copy()),
     $reset: () => {
       Object.values(children || {}).forEach((child: any) => child.$reset());
       return store.$assign(defaultState);

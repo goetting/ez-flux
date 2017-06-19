@@ -247,7 +247,6 @@ In addition to its own API and the state keys, a store will hold all keys from t
       $copy: () => Object,
       $keys: () => string[],
       $values: () => any[],
-      $stringify: () => string,
       $entries: () => [string, any][],
       $reset: () => Store,
       $on: (eventName: string, eventListener: Function) => Store,

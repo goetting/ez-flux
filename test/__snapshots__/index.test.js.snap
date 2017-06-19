@@ -16,7 +16,6 @@ Object {
   "$on": [Function],
   "$once": [Function],
   "$reset": [Function],
-  "$stringify": [Function],
   "$values": [Function],
   "bar": 1,
   "baz": true,
@@ -36,7 +35,6 @@ Object {
     "$on": [Function],
     "$once": [Function],
     "$reset": [Function],
-    "$stringify": [Function],
     "$values": [Function],
     "foo": 2,
   },
@@ -62,30 +60,8 @@ Object {
   "$on": [Function],
   "$once": [Function],
   "$reset": [Function],
-  "$stringify": [Function],
   "$values": [Function],
   "foo": 2,
-}
-`;
-
-exports[`store options initialState should assign a nested initialState to children 1`] = `
-Object {
-  "child": Object {
-    "val1": 11,
-    "val2": 12,
-    "val3": 13,
-  },
-  "val1": 11,
-  "val2": 12,
-  "val3": 13,
-}
-`;
-
-exports[`store options initialState should assign a nested initialState to children 2`] = `
-Object {
-  "val1": 11,
-  "val2": 12,
-  "val3": 13,
 }
 `;
 
@@ -101,7 +77,6 @@ Object {
   "$on": [Function],
   "$once": [Function],
   "$reset": [Function],
-  "$stringify": [Function],
   "$values": [Function],
   "baz": "baz",
   "child": Object {
@@ -119,7 +94,6 @@ Object {
     "$on": [Function],
     "$once": [Function],
     "$reset": [Function],
-    "$stringify": [Function],
     "$values": [Function],
     "bar": true,
     "deepChild": Object {
@@ -137,7 +111,6 @@ Object {
       "$on": [Function],
       "$once": [Function],
       "$reset": [Function],
-      "$stringify": [Function],
       "$values": [Function],
       "foo": true,
     },
