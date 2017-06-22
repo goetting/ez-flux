@@ -4,42 +4,59 @@ type Value = any;
 type Callback = Function;
 type EventName = Key;
 type ObjectLoopFunction = (Key, Value, index: number) => void;
-export type State = Object;
-export type Store = {
-  $events: { [EventName]: Callback[] },
-  $keys: () => Key[],
-  $values: () => Value[],
-  $entries: () => [Key, Value][],
-  $copy: () => Object,
-  $reset: () => Store,
-  $assign: (...args: Object[]) => Store,
-  $emit: (EventName, ...any[]) => Store,
-  $on: (EventName, Callback) => Store,
-  $once: (EventName, Callback) => Store,
-  $off: (EventName, Callback) => Store,
-};
 type Computed = { set?: Function, get?: Function };
 type Properties = Computed & { enumerable?: boolean, value?: any };
-export type Options = {
+type AssignComputed = <K, V>({ [K]: { ['get' | 'set']: V } }) => {K: V};
+
+export type State<DefState, DefComputed> = DefState & DefComputed;
+
+export type Options<DefState, Fns, Children, DefComputed> = {
   name?: string,
-  state?: Object,
-  methods?: { [Key]: Function },
-  computed?: { [Key]: Properties },
-  children?: { [Key]: Store },
   immutable?: boolean,
   afterCreation?: () => void,
+  state?: DefState,
+  methods?: Fns,
+  computed?: DefComputed,
+  children?: Children,
 };
-type Plugin = (State, Store, Options) => void;
+
+export type Store<DefState, Fns, Children, DefComputed: {}> = (
+  Fns &
+  DefState &
+  Children &
+  $ObjMap<DefComputed, AssignComputed> &
+  DefComputed & {
+    $events: { [EventName]: Callback[] },
+    $keys: () => Key[],
+    $values: () => Value[],
+    $entries: () => [Key, Value][],
+    $copy: () => Object,
+    $reset: () => Store<DefState, Fns, Children, DefComputed>,
+    $assign: (...args: Object[]) => Store<DefState, Fns, Children, DefComputed>,
+    $emit: (EventName, ...any[]) => Store<DefState, Fns, Children, DefComputed>,
+    $on: (EventName, Callback) => Store<DefState, Fns, Children, DefComputed>,
+    $once: (EventName, Callback) => Store<DefState, Fns, Children, DefComputed>,
+    $off: (EventName, Callback) => Store<DefState, Fns, Children, DefComputed>,
+  }
+);
+
+type Plugin<DefState, DefComputed, Fns, Children> = (
+  State<DefState, DefComputed>,
+  Store<DefState, Fns, Children, DefComputed>,
+  Options<DefState, Fns, Children, DefComputed>
+) => void;
 
 const define = Object.defineProperty;
-export const plugins: Plugin[] = [];
+export const plugins: Plugin<*, *, *, *>[] = [];
 
-export function createStore(options: Options = {}): Store {
+export function createStore <DefState: Object, DefComputed, Fns, Children>(
+  options: Options<DefState, DefComputed, Fns, Children> = {},
+): * {
   const { methods, computed, children, immutable, afterCreation } = options;
   const childCopies = {};
-  const state: State = { ...options.state };
-  const defaultState: State = { ...options.state };
-  const store: Store = {
+  const state: DefState = { ...options.state };
+  const defaultState: DefState = { ...options.state };
+  const store = {
     $events: {},
     $keys: () => Object.keys(state),
     $values: () => Object.values(state),
@@ -89,7 +106,7 @@ export function createStore(options: Options = {}): Store {
       return store;
     },
   };
-  const loop = (obj?: Object, cb: ObjectLoopFunction): void => {
+  const loop = (obj?: any, cb: ObjectLoopFunction): void => {
     if (!obj) return;
     const keys = Object.keys(obj);
     for (let i = keys.length; i--;) {
@@ -113,7 +130,7 @@ export function createStore(options: Options = {}): Store {
 
   loop(methods, (key, method) => { store[key] = method.bind(store); });
 
-  loop(children, (key, child) => {
+  loop(children || {}, (key, child) => {
     const props: Properties = { enumerable: true, get: () => child, set: child.$assign };
 
     child.$on('change', () => store.$emit('change', store, key));
@@ -122,7 +139,7 @@ export function createStore(options: Options = {}): Store {
     define(childCopies, key, { enumerable: true, get: () => child.$copy() });
   });
 
-  loop(computed, (key, { get, set }: Computed) => {
+  loop(computed, (key, { get, set }: { set?: Function, get?: Function }) => {
     const props: Properties = { enumerable: true };
 
     props.set = typeof set === 'function' ? set.bind(store) : () => {};
