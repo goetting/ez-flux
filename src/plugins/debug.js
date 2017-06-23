@@ -1,19 +1,26 @@
 /* @flow */
 import type { Store, State, Options } from '../index';
 
-type DebugPayload = {
+type Payload<DefState, Fns, Children, DefComputed> = {
   eventType: 'state change' | 'child change' | 'method called',
   storeName: string,
   childName?: string,
   methodName?: string,
-  store: Store,
-  state: Object,
+  store: Store<DefState, Fns, Children, DefComputed>,
+  state: State<DefState, DefComputed>,
 };
 
-export default function createDebugger(cb: DebugPayload => void) {
+export default function createDebugger
+<DefState: {}, Fns: {}, Children: {}, DefComputed: {}>(
+  cb: Payload<DefState, Fns, Children, DefComputed> => void,
+) {
   if (typeof cb !== 'function') throw new Error('createDebugger was called without callback');
 
-  return (state: State, store: Store, { name: storeName = '' }: Options) => {
+  return (
+    state: State<DefState, DefComputed>,
+    store: Store<DefState, Fns, Children, DefComputed>,
+    { name: storeName = '' }: Options<DefState, Fns, Children, DefComputed>,
+  ) => {
     if (!storeName) throw new Error('ezFlux debugger: Store name was not given.');
     const stateChange = 'state change';
     const childChange = 'child change';
@@ -21,7 +28,7 @@ export default function createDebugger(cb: DebugPayload => void) {
 
     store.$on(
       'change',
-      (storeArg: Store, childName: string | void) =>
+      (_, childName: string | void) =>
         cb({
           eventType: childName ? childChange : stateChange,
           storeName,
