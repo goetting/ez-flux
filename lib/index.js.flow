@@ -41,14 +41,13 @@ export type Store<DefState: {}, Fns: {}, Children: {}, DefComputed: Computed> = 
   Fns &
   DefState &
   Children &
-  AssignedComputed<DefComputed> &
-  DefComputed
+  AssignedComputed<DefComputed>
 );
 
 const define = Object.defineProperty;
 export const plugins: Function[] = [];
 
-export function createStore <DefState: Object, DefComputed: Computed, Fns: {}, Children: {}>(
+export function createStore <DefState: Object, DefComputed: Computed, Fns, Children>(
   options: Options<DefState, DefComputed, Fns, Children> = {},
 ): * {
   const { methods, computed, children, immutable, afterCreation } = options;

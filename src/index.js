@@ -41,8 +41,7 @@ export type Store<DefState: {}, Fns: {}, Children: {}, DefComputed: Computed> = 
   Fns &
   DefState &
   Children &
-  AssignedComputed<DefComputed> &
-  DefComputed
+  AssignedComputed<DefComputed>
 );
 
 const define = Object.defineProperty;
