@@ -18,14 +18,14 @@ With improved run time, design time _and_ decreased package size, _ezFlux_ turns
 -   [Install](#install)
 -   [Usage](#usage)
     -   [Getting Started](#getting-started)
-    -   [mutable Store](#mutable-state)
+    -   [Mutable Store](#mutable-store)
     -   [Computed State](#computed-state)
     -   [Store Methods](#store-methods)
     -   [Store Nesting](#store-nesting)
--   [Using Plugins](#using-plugins)
+-   [Using Plugins](#plugins-and-addons)
 -   [API Documentation](#api-documentation)
     -   [createStore](#createstore)
-    -   [Plugins and Addons](#plugins-and-addons)
+    -   [plugins](#plugins)
 -   [Contributing](#contributing)
 
 # Install
