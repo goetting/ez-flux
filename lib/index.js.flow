@@ -4,12 +4,25 @@ type Value = any;
 type Callback = Function;
 type EventName = Key;
 type ObjectLoopFunction = (Key, Value, index: number) => void;
-type Computed = { ['get' | 'set']: Function };
 type ObjectProperties = { get?: Function, set?: Function, enumerable?: boolean, value?: any };
-type AssignComputed = <K, V>({ ['get' | 'set']: V }) => V;
-type AssignedComputed<DefComputed> = $ObjMap<DefComputed, AssignComputed>
+type AssignComputed = <K, V>({K: { ['get' | 'set']: V } }) => V;
+type AssignedComputed<DefComputed> = $ObjMap<DefComputed, AssignComputed>;
 
-export type State<DefState, DefComputed: Computed> = (
+export type StoreMethods<Store> = {
+  $events: { [EventName]: Callback[] },
+  $keys: () => Key[],
+  $values: () => Value[],
+  $entries: () => [Key, Value][],
+  $copy: () => Object,
+  $reset: () => Store,
+  $assign: (...args: Object[]) => Store,
+  $emit: (EventName, ...any[]) => Store,
+  $on: (EventName, Callback) => Store,
+  $once: (EventName, Callback) => Store,
+  $off: (EventName, Callback) => Store,
+};
+
+export type State<DefState, DefComputed: {}> = (
   DefState &
   AssignedComputed<DefComputed>
 );
@@ -24,30 +37,20 @@ export type Options<DefState, Fns, Children, DefComputed> = {
   children?: Children,
 };
 
-export type Store<DefState: {}, Fns: {}, Children: {}, DefComputed: Computed> = (
- {
-    $events: { [EventName]: Callback[] },
-    $keys: () => Key[],
-    $values: () => Value[],
-    $entries: () => [Key, Value][],
-    $copy: () => State<DefState, DefComputed>,
-    $reset: () => Store<DefState, Fns, Children, DefComputed>,
-    $assign: (...args: Object[]) => Store<DefState, Fns, Children, DefComputed>,
-    $emit: (EventName, ...any[]) => Store<DefState, Fns, Children, DefComputed>,
-    $on: (EventName, Callback) => Store<DefState, Fns, Children, DefComputed>,
-    $once: (EventName, Callback) => Store<DefState, Fns, Children, DefComputed>,
-    $off: (EventName, Callback) => Store<DefState, Fns, Children, DefComputed>,
-  } &
+export type Store<DefState: {}, Fns: {}, Children: {}, DefComputed: {}> = (
   Fns &
   DefState &
   Children &
-  AssignedComputed<DefComputed>
+  AssignedComputed<DefComputed> &
+  StoreMethods<Store<DefState, Fns, Children, DefComputed>>
 );
 
 const define = Object.defineProperty;
+
 export const plugins: Function[] = [];
 
-export function createStore <DefState: Object, DefComputed: Computed, Fns, Children>(
+export function createStore
+<DefState: {}, DefComputed: {}, Fns: {}, Children: {}>(
   options: Options<DefState, DefComputed, Fns, Children> = {},
 ): * {
   const { methods, computed, children, immutable, afterCreation } = options;
