@@ -18,7 +18,7 @@ With improved run time, design time _and_ decreased package size, _ezFlux_ turns
 -   [Install](#install)
 -   [Usage](#usage)
     -   [Getting Started](#getting-started)
-    -   [Immutable Store](#immutable-state)
+    -   [mutable Store](#mutable-state)
     -   [Computed State](#computed-state)
     -   [Store Methods](#store-methods)
     -   [Store Nesting](#store-nesting)
@@ -47,9 +47,8 @@ $ yarn add ez-flux
 ### Getting Started
 
 A store saveguards a given state with getters/setter.  
-If a new value is directly assigned to the store, it will emit a change event.  
-This behaviour works great in small encapsulations.  
-Stores are sealed by default.
+If a new value is assigned to the store, it will emit a change event. 
+Stores are sealed by default - thus, adding new keys after creation, is not permitted.
 
 ```JS
 import { createStore } from 'ez-flux';
@@ -60,55 +59,34 @@ const user = createStore({
 
 user.$on('change', () => console.log(user.name));
 
-user.name = 'Jane Doe';
+user.$assign({ name: 'Jane Doe'});
 
 // console outs 'Jane Doe';
 ```
 
-To assign multiple values without spamming events, $assign may be used.
+### Mutable Store
 
-```JS
-import { createStore } from 'ez-flux';
-
-const user = createStore({
-  state: { firstName: 'John', lastName: 'Doe' },
-});
-
-user.$on('change', () => console.log(user.firstName, user.lastName));
-
-user.$assign({ firstName: 'Jane', lastName: 'Doeh'});
-
-// console outs 'Jane', 'Doeh';
-```
-
-### Immutable Store
-
-Direct value assignment may be deactivated through the _immutable_ option.  
-$assign will become the only way to mutate the state of a store.  
-This convention will result in better maintainability on large scale.  
-
+Direct value assignment may be activated with the _mutable_ option.  
+This works great in small encapsulations, where maintainability is of little concern.  
 
 ```JS
 import { createStore } from 'ez-flux';
 
 const user = createStore({
   state: { name: 'John Doe' },
-  immutable: true,
+  mutable: true,
 });
 
 user.$on('change', () => console.log(user.name));
 
 user.name = 'Jane Doe';
-// throws error;
-
-user.$assign({ name: 'Jane Doe' });
 
 // console outs 'Jane Doe';
 ```
 
 ### Computed State
 
-You may define getters and/or setters directly.
+Getters and/or setters may be defined directly.
 
 ```JS
 import { createStore } from 'ez-flux';
@@ -206,7 +184,7 @@ Attention: It will not deep clone any other nested states.
 ### Plugins
 
 [Plugins](#plugins) are an array of functions which is directly exported for you to edit.  
-They will be looped and execuded _after_ options have been handled and _before_ store and state are sealed.  
+They will be looped and executed _after_ options have been handled and _before_ store and state are sealed.  
 As a result, plugins may extend or limit the scope of the created store.  
 
 #### debug
@@ -241,10 +219,6 @@ type DebugPayload = {
 
 Useful if you wish to use ezFlux with [React](https://facebook.github.io/react/), [Inferno](https://infernojs.org/), [Preact](https://preactjs.com/) or any other react-compatible library:
 
-#### [ezProjector](https://github.com/goetting/ez-projector)
-
-Creates a mutable projection of selected state values. It will have a one-way binding with the ezFlux state and update automatically if the state changes. This is useful for libraries that bind their behaviour directly to object mutation, such as [Vue](https://vuejs.org/).
-
 
 # API Documentation
 
@@ -261,7 +235,7 @@ In addition to its own API and the state keys, a store will hold all keys from t
       computed?: { [string]: { get?: Function, set?: Function } },
       methods?: { [string]: Function },
       children?: { [string]: Store },
-      immutable?: boolen,
+      mutable?: boolen,
       afterCreation: Function,
     };
   ```
