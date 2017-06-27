@@ -5,7 +5,7 @@ type Callback = Function;
 type EventName = Key;
 type ObjectLoopFunction = (Key, Value, index: number) => void;
 type ObjectProperties = { get?: Function, set?: Function, enumerable?: boolean, value?: any };
-type AssignComputed = <K, V>({K: { ['get' | 'set']: V } }) => V;
+type AssignComputed = <V>({ ['get' | 'set']: () => V }) => V;
 type AssignedComputed<DefComputed> = $ObjMap<DefComputed, AssignComputed>;
 
 export type StoreMethods<Store> = {
